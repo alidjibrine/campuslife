@@ -212,7 +212,7 @@ export default function Onboarding() {
             )}
           </View>
 
-          {erreur && <Text style={s.erreur}>{erreur}</Text>}
+          {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
 
           <Pressable
             style={[s.bouton, !complet && s.boutonInactif]}

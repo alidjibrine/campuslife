@@ -229,7 +229,7 @@ export default function EcranNotes() {
             </View>
           )}
 
-          {erreur && <Text style={s.erreur}>{erreur}</Text>}
+          {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
 
           {chargement ? (
             <ActivityIndicator style={s.attente} size="large" color={Colors.prive.base} />

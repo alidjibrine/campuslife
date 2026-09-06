@@ -218,7 +218,7 @@ export default function EcranCours() {
             </View>
           )}
 
-          {erreur && <Text style={s.erreur}>{erreur}</Text>}
+          {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
 
           {chargement ? (
             <ActivityIndicator style={s.attente} size="large" color={Colors.prive.base} />
@@ -251,7 +251,7 @@ export default function EcranCours() {
                         <View style={s.barreVerticale} />
                         <View style={s.flex}>
                           <Text style={s.carteTitre}>{c.intitule}</Text>
-                          {c.salle && <Text style={s.carteDetail}>{c.salle}</Text>}
+                          {!!c.salle && <Text style={s.carteDetail}>{c.salle}</Text>}
                         </View>
                       </Pressable>
                     ))}

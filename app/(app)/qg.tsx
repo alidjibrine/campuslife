@@ -107,7 +107,7 @@ export default function MonQG() {
               <View key={c.id} style={s.ligneCours}>
                 <Text style={s.ligneHeure}>{c.debut}</Text>
                 <Text style={s.ligneTitre}>{c.intitule}</Text>
-                {c.salle && <Text style={s.ligneSalle}>{c.salle}</Text>}
+                {!!c.salle && <Text style={s.ligneSalle}>{c.salle}</Text>}
               </View>
             ))
           ) : (

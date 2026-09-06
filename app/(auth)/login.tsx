@@ -116,8 +116,8 @@ export default function Login() {
               editable={!enCours}
             />
 
-            {erreur && <Text style={s.erreur}>{erreur}</Text>}
-            {info && <Text style={s.info}>{info}</Text>}
+            {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
+            {!!info && <Text style={s.info}>{info}</Text>}
 
             <Pressable
               style={[s.bouton, !peutValider && s.boutonInactif]}

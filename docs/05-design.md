@@ -174,9 +174,24 @@ Le seau des avatars est public. L'adresse contient un identifiant aleatoire et
 ne se devine pas, mais elle se partage. C'est ecrit dans la politique de
 confidentialite.
 
+## L'icone
+
+Une page de notes : quatre lignes, dont deux passees au surligneur, bleu et
+vert. C'est la meme idee que les deux traits de l'ecran de connexion, mais
+posee dans son contexte, et elle tient a 60 pixels sur un ecran d'accueil.
+
+Une premiere version ne montrait que les deux barres colorees, centrees. Elle
+se lisait comme un signe egal. Les deux lignes grises autour suffisent a la
+faire basculer du cote de la page de cahier.
+
+Les fichiers sont dans `assets/`, produits par un script et non a la main :
+`icon.png` pour iOS, `adaptive-icon.png` pour Android, dont le dessin est
+reduit a 72 pour cent pour tenir dans le cercle de securite, `splash-icon.png`
+pour l'ecran de demarrage et `favicon.png` pour le web.
+
 ## Ce qui reste a faire cote design
 
-- Une icone d'application et un ecran de demarrage dessines. Aujourd'hui
-  c'est le fond papier et rien d'autre.
 - Le theme sombre, quand il y aura des testeurs pour le reclamer.
 - Les transitions entre ecrans, laissees a leur valeur par defaut.
+- Une icone dessinee par quelqu'un dont c'est le metier, le jour ou l'app
+  sortira du cercle de test. Celle-ci est honnete, elle n'est pas signee.

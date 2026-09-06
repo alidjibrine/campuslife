@@ -286,6 +286,20 @@ l'epoque reapparait sans rien faire.
 
 ---
 
+### Icone et ecran de demarrage (ajoutes au lot 8)
+
+- [x] Icone d'application : une page de notes, quatre lignes dont deux
+      surlignees en bleu et vert. Verifiee a 120 pixels avant d'etre retenue.
+- [x] Icone adaptative Android, reduite pour tenir dans le cercle de securite
+- [x] Ecran de demarrage : la marque sur fond papier, au lieu du fond nu
+- [x] Favicon web
+- [x] `app.json` complete et validee par `npx expo config`
+
+Apple refuse une soumission sans icone : c'etait, sans qu'on l'ait note, un
+bloquant du premier build.
+
+---
+
 ### Relecture complete du 6 septembre 2026
 
 Passe sur l'ensemble du code avant de le donner a des testeurs. Ce qui a ete

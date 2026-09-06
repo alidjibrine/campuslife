@@ -6,17 +6,25 @@
     "orientation": "portrait",
     "scheme": "campuslife",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#F5F3EE",
+    "icon": "./assets/icon.png",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.alidjibrine.campuslife"
+      "bundleIdentifier": "com.alidjibrine.campuslife",
+      "icon": "./assets/icon.png"
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "package": "com.alidjibrine.campuslife"
+      "package": "com.alidjibrine.campuslife",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F5F3EE"
+      }
     },
     "web": {
-      "output": "static"
+      "output": "static",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -31,8 +39,10 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F5F3EE",
-          "resizeMode": "contain"
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F3EE"
         }
       ],
       "expo-status-bar"
@@ -40,7 +50,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "alidjibrine",
-    "backgroundColor": "#F5F3EE"
+    "owner": "alidjibrine"
   }
 }

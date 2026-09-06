@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useRouter, type Href } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
@@ -11,21 +11,35 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMonProfil, type Profil as TypeProfil } from "@/lib/api";
+import { getMonProfil, messageErreur, type Profil as TypeProfil } from "@/lib/api";
+import {
+  formaterOctets,
+  stockage,
+  supprimerMonCompte,
+  type Stockage,
+} from "@/lib/compte";
+import { LISTE_DOCUMENTS } from "@/constants/textes-legaux";
 import { Colors, Espacements, Rayons } from "@/constants/theme";
 
-/** Mon profil : qui je suis, mon ecole, et la sortie. */
+/** Mon profil : qui je suis, mon ecole, mes textes, et les deux sorties. */
 export default function Profil() {
   const { deconnexion } = useAuth();
   const router = useRouter();
   const [profil, setProfil] = useState<TypeProfil | null>(null);
+  const [espace, setEspace] = useState<Stockage | null>(null);
   const [chargement, setChargement] = useState(true);
+  const [suppression, setSuppression] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       let monte = true;
-      getMonProfil()
-        .then((p) => monte && setProfil(p))
+      Promise.all([getMonProfil(), stockage().catch(() => null)])
+        .then(([p, e]) => {
+          if (!monte) return;
+          setProfil(p);
+          setEspace(e);
+        })
         .catch(() => monte && setProfil(null))
         .finally(() => monte && setChargement(false));
       return () => {
@@ -39,6 +53,40 @@ export default function Profil() {
       { text: "Annuler", style: "cancel" },
       { text: "Se deconnecter", style: "destructive", onPress: deconnexion },
     ]);
+  }
+
+  /**
+   * Deux confirmations pour une action irreversible. La premiere explique ce
+   * qui disparait, la seconde demande de le confirmer une bonne fois.
+   */
+  function confirmerSuppression() {
+    Alert.alert(
+      "Supprimer mon compte",
+      "Tout disparait definitivement : tes cours, devoirs, notes, ton emploi du temps, tes publications, et tes conversations privees, y compris les messages de tes interlocuteurs. Il n'y a pas de retour en arriere.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Continuer",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert("Confirmer", "Derniere verification. On y va ?", [
+              { text: "Non", style: "cancel" },
+              { text: "Supprimer definitivement", style: "destructive", onPress: supprimer },
+            ]),
+        },
+      ],
+    );
+  }
+
+  async function supprimer() {
+    setSuppression(true);
+    setErreur(null);
+    try {
+      await supprimerMonCompte();
+    } catch (e) {
+      setErreur(messageErreur(e));
+      setSuppression(false);
+    }
   }
 
   if (chargement) {
@@ -79,9 +127,26 @@ export default function Profil() {
             <Text style={s.champLabel}>Annee</Text>
             <Text style={s.champValeur}>{profil?.anneeEtude ?? "Non renseignee"}</Text>
           </View>
-          <View style={[s.champ, s.dernier]}>
+          <View style={s.champ}>
             <Text style={s.champLabel}>Filiere</Text>
             <Text style={s.champValeur}>{profil?.filiere ?? "Non renseignee"}</Text>
+          </View>
+          <View style={[s.champ, s.dernier]}>
+            <Text style={s.champLabel}>Stockage</Text>
+            {espace ? (
+              <>
+                <Text style={s.champValeur}>
+                  {formaterOctets(espace.utilise)} sur {formaterOctets(espace.quota)}
+                </Text>
+                <View style={s.jauge}>
+                  <View
+                  style={[s.jaugeRemplie, { width: `${espace.pourcentage}%` }]}
+                />
+                </View>
+              </>
+            ) : (
+              <Text style={s.champValeur}>Indisponible</Text>
+            )}
           </View>
         </View>
 
@@ -92,8 +157,33 @@ export default function Profil() {
           <Text style={s.actionTexte}>Modifier mes informations</Text>
         </Pressable>
 
+        <Text style={s.rubrique}>Le cadre</Text>
+        <View style={s.bloc}>
+          {LISTE_DOCUMENTS.map((d, i) => (
+            <Pressable
+              key={d.cle}
+              style={[s.champ, i === LISTE_DOCUMENTS.length - 1 && s.dernier]}
+              onPress={() => router.push(("/document/" + d.cle) as Href)}
+            >
+              <Text style={s.lien}>{d.titre}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
+
         <Pressable style={[s.action, s.sortie]} onPress={confirmerDeconnexion}>
           <Text style={[s.actionTexte, s.sortieTexte]}>Me deconnecter</Text>
+        </Pressable>
+
+        <Pressable
+          style={[s.action, s.danger]}
+          onPress={confirmerSuppression}
+          disabled={suppression}
+        >
+          <Text style={[s.actionTexte, s.dangerTexte]}>
+            {suppression ? "Suppression en cours..." : "Supprimer mon compte"}
+          </Text>
         </Pressable>
 
         <Text style={s.version}>CampusLife, version de developpement</Text>
@@ -151,6 +241,28 @@ const s = StyleSheet.create({
     textTransform: "uppercase",
   },
   champValeur: { fontSize: 15.5, color: Colors.neutre.encre, marginTop: 4 },
+  jauge: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.neutre.trait,
+    marginTop: 8,
+    overflow: "hidden",
+  },
+  jaugeRemplie: { height: 5, backgroundColor: Colors.prive.base },
+  rubrique: {
+    marginTop: Espacements.xl,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    fontWeight: "700",
+    color: Colors.neutre.discret,
+    textTransform: "uppercase",
+  },
+  lien: { fontSize: 15.5, color: Colors.prive.fonce, fontWeight: "600" },
+  erreur: {
+    marginTop: Espacements.md,
+    fontSize: 14,
+    color: Colors.etat.erreur,
+  },
   action: {
     marginTop: Espacements.md,
     paddingVertical: 14,
@@ -163,6 +275,8 @@ const s = StyleSheet.create({
   actionTexte: { fontSize: 15, fontWeight: "600", color: Colors.neutre.encre },
   sortie: { borderColor: Colors.etat.erreur },
   sortieTexte: { color: Colors.etat.erreur },
+  danger: { borderColor: Colors.etat.erreur, backgroundColor: Colors.etat.erreur },
+  dangerTexte: { color: Colors.neutre.blanc },
   version: {
     marginTop: Espacements.xl,
     fontSize: 12,

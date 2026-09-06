@@ -192,12 +192,29 @@ Reste a faire sur un vrai appareil, avec un deuxieme compte.
 **But :** ce qui separe un projet perso d'une app qu'on donne a des inconnus.
 
 - [x] Fonction de suppression de compte deja ecrite (`delete_account`, juin 2026)
-- [ ] Quota de stockage par compte, verifie avant chaque ecriture de fichier
-- [ ] CGU et politique de confidentialite, ecrites et accessibles dans l'app
-- [ ] Suppression de compte qui supprime vraiment les donnees
-- [ ] Regles de moderation publiees
-- [ ] `eas.json`, premier build, TestFlight
+- [x] Quota de stockage par compte : 50 Mo, 2 Mo par avatar, 10 Mo par document,
+      controle par une regle restrictive en base (migration 007)
+- [x] CGU, politique de confidentialite et regles de la communaute, accessibles
+      depuis l'onglet Profil (`constants/textes-legaux.ts`)
+- [x] Suppression de compte qui supprime vraiment les donnees, fichiers compris
+      (migrations 007 et 008, `lib/compte.ts`)
+- [x] `eas.json` et identifiants d'application ecrits
+- [ ] Editeur et adresse de contact a renseigner (`EDITEUR`, bandeau rouge dans
+      l'app tant que ce n'est pas fait)
+- [ ] Relecture juridique des trois textes
+- [ ] Premier build, distribution aux testeurs
 - [ ] Dix testeurs a l'Universite de Strasbourg
+
+**Verifie en base** (transaction annulee) : un compte cree avec des donnees dans
+les dix-sept tables ne laisse aucune ligne derriere lui apres `delete_account`,
+et le compte de son interlocuteur reste intact.
+
+**Trouve au passage :** la version de la 007 effacait aussi les lignes de
+`storage.objects`. Supabase l'interdit par declencheur, ce qui faisait echouer
+toute la suppression. Corrige par la 008 : les fichiers sont effaces par l'app,
+avant l'appel a la fonction.
+
+La marche a suivre complete est dans `docs/04-mise-en-service.md`.
 
 **Fini quand :** un etudiant que tu ne connais pas installe l'app et s'en sert
 une semaine sans toi.

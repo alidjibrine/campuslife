@@ -32,6 +32,11 @@ supprimees de la base.
   `mes_conversations` et `marquer_lu`.
 - `006_durcissement_acces` : correction de la vue `public_profiles` heritee de
   juin, qui exposait l'annuaire de tous les etablissements au role anonyme.
+- `007_quota_et_suppression` : limites de taille par fichier, quota de 50 Mo par
+  compte, suppression de compte etendue aux tables ajoutees depuis juin.
+- `008_suppression_sans_storage` : correction de la 007, qui rendait la
+  suppression de compte impossible en tentant d'effacer des lignes de
+  `storage.objects`, ce que Supabase interdit.
 
 ## Etat au 6 septembre 2026
 

@@ -8,10 +8,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.alidjibrine.campuslife"
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.alidjibrine.campuslife"
     },
     "web": {
       "output": "static"
@@ -24,6 +26,7 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "owner": "alidjibrine"
   }
 }

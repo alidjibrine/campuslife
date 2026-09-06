@@ -38,3 +38,6 @@ yarn-error.*
 # dossiers natifs generes
 /ios
 /android
+
+# sortie temporaire des tests
+.test-tmp/

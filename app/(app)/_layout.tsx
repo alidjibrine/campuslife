@@ -71,6 +71,7 @@ export default function AppLayout() {
       <Stack.Screen name="cours" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="devoirs" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="notes" options={{ animation: "slide_from_right" }} />
+      <Stack.Screen name="emploi-du-temps" options={{ animation: "slide_from_right" }} />
     </Stack>
   );
 }

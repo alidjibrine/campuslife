@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Link, useFocusEffect } from "expo-router";
+import { Link, useFocusEffect, type Href } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -21,6 +21,7 @@ import {
   type Cours,
   type Devoir,
 } from "@/lib/etudes";
+import { formaterHeure, listerSeances, type Seance } from "@/lib/agenda";
 import { Colors, Espacements, Rayons } from "@/constants/theme";
 
 /**
@@ -35,6 +36,7 @@ export default function MonQG() {
   const [profil, setProfil] = useState<Profil | null>(null);
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [cours, setCours] = useState<Cours[]>([]);
+  const [seances, setSeances] = useState<Seance[]>([]);
   const [moyenneGenerale, setMoyenneGenerale] = useState<number | null>(null);
   const [chargement, setChargement] = useState(true);
 
@@ -43,17 +45,24 @@ export default function MonQG() {
       let monte = true;
       (async () => {
         try {
-          const [p, d, c, n] = await Promise.all([
+          const debutJour = new Date();
+          debutJour.setHours(0, 0, 0, 0);
+          const finJour = new Date();
+          finJour.setHours(23, 59, 59, 999);
+
+          const [p, d, c, n, se] = await Promise.all([
             getMonProfil(),
             listerDevoirs(),
             listerCours(),
             listerNotes(),
+            listerSeances(debutJour, finJour),
           ]);
           if (!monte) return;
           setProfil(p);
           setDevoirs(d);
           setCours(c);
           setMoyenneGenerale(moyenne(n));
+          setSeances(se);
         } catch {
           if (monte) setProfil(null);
         } finally {
@@ -72,6 +81,23 @@ export default function MonQG() {
   // JavaScript numerote les jours a partir de dimanche, la base a partir de lundi.
   const jourActuel = ((new Date().getDay() + 6) % 7) + 1;
   const coursDuJour = cours.filter((c) => c.jour === jourActuel);
+
+  // Le programme du jour melange les seances importees de l'emploi du temps
+  // et les cours saisis a la main, tries a l'heure.
+  const programmeDuJour = [
+    ...seances.map((x) => ({
+      cle: x.id,
+      heure: formaterHeure(x.debut),
+      intitule: x.intitule,
+      salle: x.salle,
+    })),
+    ...coursDuJour.map((c) => ({
+      cle: c.id,
+      heure: c.debut,
+      intitule: c.intitule,
+      salle: c.salle,
+    })),
+  ].sort((a, b) => a.heure.localeCompare(b.heure));
 
   if (chargement) {
     return (
@@ -102,12 +128,12 @@ export default function MonQG() {
           <Text style={s.aujourdhuiLabel}>
             {JOURS[jourActuel - 1].toUpperCase()}
           </Text>
-          {coursDuJour.length > 0 ? (
-            coursDuJour.map((c) => (
-              <View key={c.id} style={s.ligneCours}>
-                <Text style={s.ligneHeure}>{c.debut}</Text>
-                <Text style={s.ligneTitre}>{c.intitule}</Text>
-                {!!c.salle && <Text style={s.ligneSalle}>{c.salle}</Text>}
+          {programmeDuJour.length > 0 ? (
+            programmeDuJour.map((x) => (
+              <View key={x.cle} style={s.ligneCours}>
+                <Text style={s.ligneHeure}>{x.heure}</Text>
+                <Text style={s.ligneTitre}>{x.intitule}</Text>
+                {!!x.salle && <Text style={s.ligneSalle}>{x.salle}</Text>}
               </View>
             ))
           ) : (
@@ -139,7 +165,7 @@ export default function MonQG() {
             </Pressable>
           </Link>
           <Link href="/notes" asChild>
-            <Pressable style={StyleSheet.flatten([s.tuile, s.tuileLarge])}>
+            <Pressable style={s.tuile}>
               <Text style={s.tuileChiffre}>
                 {moyenneGenerale === null
                   ? "--"
@@ -149,17 +175,23 @@ export default function MonQG() {
               <Text style={s.tuileLabel}>ma moyenne generale</Text>
             </Pressable>
           </Link>
+          <Link href={"/emploi-du-temps" as Href} asChild>
+            <Pressable style={s.tuile}>
+              <Text style={s.tuileChiffre}>{seances.length}</Text>
+              <Text style={s.tuileLabel}>seances importees aujourd&apos;hui</Text>
+            </Pressable>
+          </Link>
         </View>
 
         <Text style={s.section}>Construction</Text>
         <View style={s.avancement}>
-          <Text style={s.avancementTitre}>2 lots termines sur 8</Text>
+          <Text style={s.avancementTitre}>3 lots termines sur 8</Text>
           <Text style={s.avancementTexte}>
-            Le lot 3 branchera l&apos;import de ton emploi du temps, le lot 4
+            L&apos;import de l&apos;emploi du temps est en place. Le lot 4
             transformera cet ecran en vrai tableau de bord.
           </Text>
           <View style={s.barre}>
-            <View style={[s.barreRemplie, { width: "25%" }]} />
+            <View style={[s.barreRemplie, { width: "38%" }]} />
           </View>
         </View>
       </ScrollView>

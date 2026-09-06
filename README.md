@@ -25,6 +25,13 @@ Pour vider le cache quand quelque chose ne se met pas a jour : `npx expo start -
 
 Avant le lot 1, copier `.env.example` en `.env` et remplir les deux valeurs Supabase.
 
+## Verifier
+
+```bash
+npm run typecheck    # aucune erreur de typage sur tout le projet
+npm run test:ics     # 22 tests du lecteur d'emploi du temps
+```
+
 ## Structure
 
 ```

@@ -84,14 +84,15 @@ je le coche et il passe en fait.
 **But :** le differenciateur. L'app se remplit toute seule.
 
 - [x] Tables pretes : `timetable_sources` et `timetable_events` (migration 003)
-- [ ] `npx expo install expo-document-picker`
-- [ ] `lib/ics.ts` : lecture d'un flux iCalendar, extraction des VEVENT
-      (debut, fin, intitule, salle, UID, recurrence simple)
-- [ ] Ecran "Importer mon emploi du temps" : coller un lien, ou choisir un fichier
-- [ ] Enregistrement dans `sources_agenda`, creation des `seances`
-- [ ] Resynchronisation : bouton "mettre a jour", sans creer de doublon
-      (cle `user_id` + `uid_externe`)
-- [ ] Vue semaine, jour par jour
+- [x] `lib/ics.ts` : lecture d'un flux iCalendar. Lignes repliees, echappements,
+      heures UTC et heures locales, journees entieres, recurrences hebdomadaires
+      et quotidiennes avec INTERVAL, COUNT, UNTIL et BYDAY
+- [x] `lib/ics.test.ts` : 22 tests, lances par `npm run test:ics`
+- [x] Ecran "Mon emploi du temps" : coller un lien, mettre a jour, supprimer
+- [x] Vue semaine avec navigation vers la semaine precedente et la suivante
+- [x] Le QG melange les seances importees et les cours saisis a la main
+- [ ] Import d'un fichier `.ics` depuis le telephone
+      (demande `npx expo install expo-document-picker`)
 
 **A savoir :** les universites francaises publient deja leur emploi du temps sous
 forme de lien d'agenda a synchroniser, depuis ADE ou Celcat. C'est ce lien que
@@ -99,6 +100,12 @@ l'etudiant colle. Aucune ecole n'a besoin de donner son accord.
 
 **Fini quand :** je colle un lien d'emploi du temps et ma semaine s'affiche, et
 recliquer sur "mettre a jour" ne cree pas de doublon.
+
+> **6 septembre 2026.** Le lecteur iCalendar passe ses 22 tests. Choix de mise en
+> oeuvre : a chaque synchronisation, les seances de la source sont supprimees puis
+> reinserees en bloc. C'est plus simple qu'une reconciliation ligne a ligne, et ca
+> garantit qu'un creneau annule par l'universite disparait aussi de l'app.
+> Reste a tester avec un vrai lien d'emploi du temps.
 
 ---
 

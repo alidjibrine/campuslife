@@ -22,6 +22,18 @@ supprimees de la base.
 - Le nommage des tables et des colonnes est en anglais, comme depuis juin.
   L'interface, elle, reste entierement en francais.
 
+## Les migrations de ce dossier
+
+- `003_schools_and_timetable` : etablissements, rattachement par domaine de mail,
+  cloisonnement du fil par ecole, sources et seances d'emploi du temps.
+- `004_signalements_et_abonnements` : signalements, abonnements entre membres.
+- `005_messages_prives` : cloisonnement des conversations par etablissement,
+  suivi de lecture, unicite de la paire, realtime, fonctions `ouvrir_conversation`,
+  `mes_conversations` et `marquer_lu`.
+- `006_durcissement_acces` : correction de la vue `public_profiles` heritee de
+  juin, qui exposait l'annuaire de tous les etablissements au role anonyme.
+
 ## Etat au 6 septembre 2026
 
-16 tables, 52 politiques d'acces, aucune table sans RLS.
+17 tables, aucune table sans RLS. Analyseur de securite Supabase : plus aucune
+alerte de niveau ERROR.

@@ -168,14 +168,22 @@ d'ecoles differentes sont invisibles l'un pour l'autre.
 **But :** parler a une personne en particulier.
 
 - [x] Tables `conversations` et `messages` deja en place depuis juin
-- [ ] Liste des conversations, compteur de non-lus
-- [ ] Ecran conversation, temps reel
-- [ ] Ouverture d'une conversation depuis un profil de membre
+- [x] Migration 005 : cloisonnement par etablissement, suivi de lecture, realtime
+- [x] Liste des conversations, compteur de non-lus (onglet Messages)
+- [x] Ecran conversation, temps reel, separateurs de jour, suppression d'un message
+- [x] Ouverture d'une conversation depuis l'annuaire des membres
 
 **A copier de Najda :** les ecrans de messagerie, qui y sont complets et testes.
 Le modele de donnees, lui, existe deja dans CampusLife.
 
+**Verifie en base** (transaction annulee, trois comptes de test) : conversation
+unique quel que soit l'ordre des deux membres, compteur de non lus juste des
+deux cotes, un etudiant d'une autre ecole ne voit ni la conversation ni les
+messages et ne peut pas en ouvrir une, les participants ne peuvent plus etre
+modifies apres coup.
+
 **Fini quand :** deux telephones echangent un message qui arrive sans rafraichir.
+Reste a faire sur un vrai appareil, avec un deuxieme compte.
 
 ---
 

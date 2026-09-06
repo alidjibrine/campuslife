@@ -74,3 +74,17 @@ Le quota reste a faire, il est dans le lot 7.
 Tout. La decision du 6 septembre est de completer cette base plutot que de la
 refaire. Consequence sur le programme de dev : le lot 1 et le lot 6 sont
 largement deja faits cote base, il ne reste que les ecrans.
+
+
+## Correction du 6 septembre 2026
+
+La vue `public_profiles`, creee le 14 juin, etait declaree SECURITY DEFINER et
+lisible par le role `anon`. Elle exposait le prenom, le nom, la bio, l'ecole, la
+filiere et l'annee de tous les profils, toutes ecoles confondues, a quiconque
+disposait de la cle publique de l'application, sans meme avoir a se connecter.
+Cette cle etant embarquee dans l'app installee sur les telephones, elle est
+publique par nature.
+
+La migration `006_durcissement_acces` repasse la vue en SECURITY INVOKER et
+retire le role `anon`. Elle applique desormais les memes regles que la table
+`profiles` : on ne voit que son propre etablissement.

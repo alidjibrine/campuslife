@@ -3,9 +3,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 
 /**
- * Les quatre onglets de CampusLife.
+ * Les cinq onglets de CampusLife.
  *
- * Mon QG et Etudes sont l'espace prive, Communaute est l'espace social.
+ * Mon QG et Etudes sont l'espace prive, Communaute et Messages forment
+ * l'espace social.
  * L'ordre suit celui du diagramme de cadrage : ce que je garde d'abord,
  * ce que je partage ensuite.
  */
@@ -48,6 +49,15 @@ export default function OngletsLayout() {
           title: "Communaute",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: "Messages",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
         }}
       />

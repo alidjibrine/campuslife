@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useRouter, type Href } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -15,6 +15,7 @@ import {
   listerMembres,
   type Membre,
 } from "@/lib/communaute";
+import { ouvrirConversation } from "@/lib/messages";
 import { getMonProfil, messageErreur } from "@/lib/api";
 import { Colors, Espacements, Rayons } from "@/constants/theme";
 
@@ -31,6 +32,7 @@ export default function Membres() {
   const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [ouverture, setOuverture] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
     try {
@@ -50,6 +52,20 @@ export default function Membres() {
       charger();
     }, [charger]),
   );
+
+  /** Ouvre la conversation avec ce membre, ou rejoint celle qui existe deja. */
+  async function discuter(m: Membre) {
+    if (ouverture) return;
+    setOuverture(m.id);
+    try {
+      const conversation = await ouvrirConversation(m.id);
+      router.push(("/conversation/" + conversation) as Href);
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setOuverture(null);
+    }
+  }
 
   async function suivre(m: Membre) {
     setMembres((liste) =>
@@ -126,14 +142,25 @@ export default function Membres() {
                       "Profil incomplet"}
                   </Text>
                 </View>
-                <Pressable
-                  style={[s.bouton, m.suivi && s.boutonSuivi]}
-                  onPress={() => suivre(m)}
-                >
-                  <Text style={[s.boutonTexte, m.suivi && s.boutonTexteSuivi]}>
-                    {m.suivi ? "Suivi" : "Suivre"}
-                  </Text>
-                </Pressable>
+                <View style={s.actions}>
+                  <Pressable
+                    style={[s.bouton, s.boutonPlein]}
+                    onPress={() => discuter(m)}
+                    disabled={ouverture === m.id}
+                  >
+                    <Text style={[s.boutonTexte, s.boutonTexterPlein]}>
+                      {ouverture === m.id ? "..." : "Message"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[s.bouton, m.suivi && s.boutonSuivi]}
+                    onPress={() => suivre(m)}
+                  >
+                    <Text style={[s.boutonTexte, m.suivi && s.boutonTexteSuivi]}>
+                      {m.suivi ? "Suivi" : "Suivre"}
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             ))}
           </View>
@@ -204,6 +231,7 @@ const s = StyleSheet.create({
   avatarTexte: { fontSize: 14, fontWeight: "800", color: Colors.social.fonce },
   nom: { fontSize: 15, fontWeight: "700", color: Colors.neutre.encre },
   detail: { fontSize: 13, color: Colors.neutre.discret, marginTop: 2 },
+  actions: { gap: 6, alignItems: "stretch" },
   bouton: {
     paddingHorizontal: Espacements.md,
     paddingVertical: 8,
@@ -212,6 +240,8 @@ const s = StyleSheet.create({
     borderColor: Colors.social.base,
   },
   boutonSuivi: { backgroundColor: Colors.social.clair },
+  boutonPlein: { backgroundColor: Colors.social.base },
+  boutonTexterPlein: { color: "#FFFFFF" },
   boutonTexte: { fontSize: 13, fontWeight: "700", color: Colors.social.fonce },
   boutonTexteSuivi: { color: Colors.social.fonce },
 });

@@ -1,0 +1,195 @@
+# CampusLife - programme de developpement
+
+> **Mise a jour du 6 septembre 2026.** La base de donnees existe depuis juin
+> (voir `03-base-existante.md`) : 16 tables, 52 politiques d'acces. Les durees
+> ci-dessous en tiennent compte, il ne reste que les ecrans a construire sur
+> plusieurs lots.
+
+Huit lots, dans cet ordre. Un lot = une branche = un commit pousse.
+On ne commence pas un lot tant que le precedent n'est pas fini.
+Les durees sont des soirees de 2 a 3 heures, ce sont des ordres de grandeur.
+
+---
+
+## Lot 0 - Mise en place (1 soiree)
+
+**But :** que le projet s'affiche sur ton iPhone. Rien d'autre.
+
+- [x] Squelette Expo cree, versions alignees sur Najda
+- [x] Projet Supabase `campuslife` reveille et migration 003 appliquee
+- [x] Fichier `.env` rempli avec l'URL et la cle du projet
+- [x] Depot git initialise, 19 fichiers prets a commiter
+- [x] `npm install` et montee du projet en SDK 57 (`npx expo install --fix`)
+- [x] Compte Expo `alidjibrine` connecte cote terminal et cote Expo Go
+- [x] L'ecran provisoire s'affiche sur l'iPhone
+- [ ] `git commit`, creation du depot GitHub `campuslife`, puis `git push`
+
+```
+cd C:\Users\adoum\Dev\campuslife
+npm install
+npx expo start
+```
+
+**Fini quand :** l'ecran CampusLife s'affiche sur le telephone et le premier
+commit est pousse.
+
+> **6 septembre 2026, 14 h.** L'app tourne sur l'iPhone. Deux surprises au
+> passage : le projet etait ne en SDK 54 alors qu'Expo Go est passe en 57, et
+> le SDK 57 impose desormais d'etre connecte au meme compte Expo des deux cotes.
+> Les deux sont regles. Il ne reste que le commit.
+
+---
+
+## Lot 1 - Compte et etablissement (1 a 2 soirees, la base est faite)
+
+**But :** je m'inscris avec mon adresse universitaire et l'app sait dans quelle
+ecole je suis.
+
+- [x] Base prete : `profiles`, `schools`, rattachement automatique par domaine e-mail
+- [ ] `contexts/AuthContext.tsx` repris de Najda
+- [ ] Ecrans `(auth)/login` et `(auth)/inscription`
+- [ ] Groupe `(app)` protege, redirection selon la session
+- [ ] Onboarding : prenom, nom, annee d'etude, filiere
+- [ ] Si le domaine e-mail ne correspond a aucun etablissement : ecran
+      "ton ecole n'est pas encore sur CampusLife", avec formulaire de demande
+
+**A copier de Najda :** `contexts/AuthContext.tsx`, `lib/supabase.ts`,
+la structure des ecrans `(auth)`, `app/index.tsx` (la redirection).
+
+**Fini quand :** je cree un compte avec une adresse `@etu.unistra.fr`, je remplis
+mon profil, je ferme l'app, je la rouvre et je suis toujours connecte.
+
+---
+
+## Lot 2 - Etudes, saisie a la main (2 a 3 soirees, les tables existent)
+
+**But :** le coeur du produit. Mes cours, mes devoirs, mes notes.
+
+- [x] Tables pretes depuis juin : `courses`, `assignments`, `grades`
+- [ ] `lib/etudes.ts` : les fonctions de lecture et d'ecriture
+- [ ] Ecran Cours : liste, ajout, couleur, archivage
+- [ ] Ecran Devoirs : liste triee par echeance, ajout, coche "fait"
+- [ ] Ecran Notes : saisie valeur, bareme, coefficient, moyenne par cours
+- [ ] Etat vide soigne sur chaque ecran, avec un bouton qui invite a ajouter
+
+**Fini quand :** j'ajoute un devoir pour vendredi, il apparait en tete de liste,
+je le coche et il passe en fait.
+
+---
+
+## Lot 3 - Import de l'emploi du temps (2 a 3 soirees)
+
+**But :** le differenciateur. L'app se remplit toute seule.
+
+- [x] Tables pretes : `timetable_sources` et `timetable_events` (migration 003)
+- [ ] `npx expo install expo-document-picker`
+- [ ] `lib/ics.ts` : lecture d'un flux iCalendar, extraction des VEVENT
+      (debut, fin, intitule, salle, UID, recurrence simple)
+- [ ] Ecran "Importer mon emploi du temps" : coller un lien, ou choisir un fichier
+- [ ] Enregistrement dans `sources_agenda`, creation des `seances`
+- [ ] Resynchronisation : bouton "mettre a jour", sans creer de doublon
+      (cle `user_id` + `uid_externe`)
+- [ ] Vue semaine, jour par jour
+
+**A savoir :** les universites francaises publient deja leur emploi du temps sous
+forme de lien d'agenda a synchroniser, depuis ADE ou Celcat. C'est ce lien que
+l'etudiant colle. Aucune ecole n'a besoin de donner son accord.
+
+**Fini quand :** je colle un lien d'emploi du temps et ma semaine s'affiche, et
+recliquer sur "mettre a jour" ne cree pas de doublon.
+
+---
+
+## Lot 4 - Mon QG (2 soirees)
+
+**But :** l'ecran qu'on ouvre le matin.
+
+- [ ] Remplacer l'ecran provisoire par le vrai accueil
+- [ ] Bloc "aujourd'hui" : prochain cours, salle, heure
+- [ ] Bloc "a rendre" : les trois devoirs les plus proches
+- [ ] Bloc "ma moyenne" : moyenne generale et derniere note saisie
+- [ ] Navigation par onglets : QG, Etudes, Communaute, Profil
+
+**A copier de Najda :** la structure de l'accueil et des onglets.
+
+**Fini quand :** j'ouvre l'app et je sais quoi faire de ma journee sans cliquer.
+
+---
+
+## Lot 5 - Communaute d'etablissement (3 a 4 soirees, les tables existent)
+
+**But :** le social, ferme a mon ecole.
+
+- [x] Tables et fermeture par ecole deja en place : `posts`, `comments`,
+      `post_likes`, filtres sur `my_school_id()`
+- [ ] Ecrire la migration 004 : signalements, et filtrage de `follows` par ecole
+- [ ] Ecran Sujets : fil de l'etablissement, categories, publication
+- [ ] Ecran Sujet : reponses, ordre chronologique
+- [ ] Ecran Membres : annuaire de l'ecole, suivre et ne plus suivre
+- [ ] Bouton Signaler sur chaque sujet et chaque reponse
+- [ ] Page publique des regles de la communaute, ecrite avant la mise en ligne
+
+**Verification obligatoire :** creer deux comptes de deux ecoles differentes et
+confirmer que l'un ne voit rien de l'autre. Aucun raccourci sur ce test.
+
+**Fini quand :** deux comptes de la meme ecole se voient et discutent, deux comptes
+d'ecoles differentes sont invisibles l'un pour l'autre.
+
+---
+
+## Lot 6 - Messages prives (1 soiree, la messagerie existe en base)
+
+**But :** parler a une personne en particulier.
+
+- [x] Tables `conversations` et `messages` deja en place depuis juin
+- [ ] Liste des conversations, compteur de non-lus
+- [ ] Ecran conversation, temps reel
+- [ ] Ouverture d'une conversation depuis un profil de membre
+
+**A copier de Najda :** les ecrans de messagerie, qui y sont complets et testes.
+Le modele de donnees, lui, existe deja dans CampusLife.
+
+**Fini quand :** deux telephones echangent un message qui arrive sans rafraichir.
+
+---
+
+## Lot 7 - Avant de montrer a quelqu'un (2 soirees)
+
+**But :** ce qui separe un projet perso d'une app qu'on donne a des inconnus.
+
+- [x] Fonction de suppression de compte deja ecrite (`delete_account`, juin 2026)
+- [ ] Quota de stockage par compte, verifie avant chaque ecriture de fichier
+- [ ] CGU et politique de confidentialite, ecrites et accessibles dans l'app
+- [ ] Suppression de compte qui supprime vraiment les donnees
+- [ ] Regles de moderation publiees
+- [ ] `eas.json`, premier build, TestFlight
+- [ ] Dix testeurs a l'Universite de Strasbourg
+
+**Fini quand :** un etudiant que tu ne connais pas installe l'app et s'en sert
+une semaine sans toi.
+
+---
+
+## Total
+
+Environ 14 a 18 soirees pour la premiere version complete, contre 18 a 25 avant
+la decouverte de la base de juin. Le lot 3 est celui qui donne le plus de valeur
+par heure passee, le lot 5 reste le plus long et le plus risque.
+
+## Regles de travail
+
+1. Un lot a la fois, fini et commite avant le suivant.
+2. Chaque lot se termine par un test sur le telephone, pas seulement par du code
+   qui compile.
+3. Budget, Documents et Memo n'entrent pas dans ce programme. Si l'envie revient,
+   l'ecrire ici, en bas, et continuer le lot en cours.
+4. Toute nouvelle table part avec ses regles d'acces dans la meme migration.
+5. Les migrations appliquees ne sont jamais modifiees.
+
+## Idees mises de cote
+
+- Budget : depenses et plafonds (dans le diagramme d'origine)
+- Documents : PDF, Word, photos (dans le diagramme d'origine)
+- Memo : notes rapides (dans le diagramme d'origine)
+- Notifications push, pour les devoirs a rendre et les reponses aux sujets
+- Remplissage collaboratif des devoirs par la promo

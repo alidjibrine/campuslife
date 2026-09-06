@@ -46,12 +46,12 @@ commit est pousse.
 ecole je suis.
 
 - [x] Base prete : `profiles`, `schools`, rattachement automatique par domaine e-mail
-- [ ] `contexts/AuthContext.tsx` repris de Najda
-- [ ] Ecrans `(auth)/login` et `(auth)/inscription`
-- [ ] Groupe `(app)` protege, redirection selon la session
-- [ ] Onboarding : prenom, nom, annee d'etude, filiere
-- [ ] Si le domaine e-mail ne correspond a aucun etablissement : ecran
-      "ton ecole n'est pas encore sur CampusLife", avec formulaire de demande
+- [x] `contexts/AuthContext.tsx`, repris de Najda
+- [x] Ecran unique connexion et inscription, avec bascule entre les deux
+- [x] Groupe `(app)` protege, redirection selon la session
+- [x] Onboarding : prenom, nom, annee d'etude, filiere
+- [x] Ecole non detectee : choix dans la liste plutot qu'un mur
+      (a durcir au lot 7, ce choix manuel n'est pas verifie)
 
 **A copier de Najda :** `contexts/AuthContext.tsx`, `lib/supabase.ts`,
 la structure des ecrans `(auth)`, `app/index.tsx` (la redirection).
@@ -66,11 +66,13 @@ mon profil, je ferme l'app, je la rouvre et je suis toujours connecte.
 **But :** le coeur du produit. Mes cours, mes devoirs, mes notes.
 
 - [x] Tables pretes depuis juin : `courses`, `assignments`, `grades`
-- [ ] `lib/etudes.ts` : les fonctions de lecture et d'ecriture
-- [ ] Ecran Cours : liste, ajout, couleur, archivage
-- [ ] Ecran Devoirs : liste triee par echeance, ajout, coche "fait"
-- [ ] Ecran Notes : saisie valeur, bareme, coefficient, moyenne par cours
-- [ ] Etat vide soigne sur chaque ecran, avec un bouton qui invite a ajouter
+- [x] `lib/etudes.ts` : lecture, ecriture, moyennes, formats de date
+- [x] Ecran Cours : semaine type groupee par jour, ajout, suppression
+- [x] Ecran Devoirs : tri par echeance, badges J-x et retard, coche "fait"
+- [x] Ecran Notes : valeur, bareme, coefficient, moyenne ponderee sur 20
+      et moyenne par matiere
+- [x] Etat vide soigne sur chaque ecran
+- [x] QG intermediaire : cours du jour, prochain devoir, trois tuiles chiffrees
 
 **Fini quand :** j'ajoute un devoir pour vendredi, il apparait en tete de liste,
 je le coche et il passe en fait.

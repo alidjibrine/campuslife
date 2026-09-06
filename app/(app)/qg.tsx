@@ -139,7 +139,7 @@ export default function MonQG() {
             </Pressable>
           </Link>
           <Link href="/notes" asChild>
-            <Pressable style={[s.tuile, s.tuileLarge]}>
+            <Pressable style={StyleSheet.flatten([s.tuile, s.tuileLarge])}>
               <Text style={s.tuileChiffre}>
                 {moyenneGenerale === null
                   ? "--"

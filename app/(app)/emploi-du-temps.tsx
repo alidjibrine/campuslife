@@ -1,17 +1,15 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Champ from "@/components/Champ";
+import Bouton from "@/components/Bouton";
+import Section from "@/components/Section";
+import Alerte from "@/components/Alerte";
+import EtatVide from "@/components/EtatVide";
 import {
   ajouterSourceLien,
   debutDeSemaine,
@@ -25,17 +23,16 @@ import {
   type SourceAgenda,
 } from "@/lib/agenda";
 import { messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, PRESSION, Polices, Rayons, Typo } from "@/constants/theme";
 
 /**
  * Import de l'emploi du temps.
  *
- * L'etudiant colle le lien d'agenda fourni par son universite, ADE ou Celcat,
- * et sa semaine se remplit. Aucune ecole n'a besoin de donner son accord :
- * ces liens sont deja publies pour etre synchronises dans un agenda.
+ * L'étudiant colle le lien d'agenda fourni par son université, ADE ou Celcat,
+ * et sa semaine se remplit. Aucune école n'a besoin de donner son accord :
+ * ces liens sont déjà publiés pour être synchronisés dans un agenda.
  */
 export default function EmploiDuTemps() {
-  const router = useRouter();
   const [sources, setSources] = useState<SourceAgenda[]>([]);
   const [seances, setSeances] = useState<Seance[]>([]);
   const [decalageSemaine, setDecalageSemaine] = useState(0);
@@ -55,11 +52,8 @@ export default function EmploiDuTemps() {
 
   const charger = useCallback(async () => {
     try {
-      const [s, e] = await Promise.all([
-        listerSources(),
-        listerSeances(lundi, dimanche),
-      ]);
-      setSources(s);
+      const [s2, e] = await Promise.all([listerSources(), listerSeances(lundi, dimanche)]);
+      setSources(s2);
       setSeances(e);
       setErreur(null);
     } catch (e) {
@@ -93,14 +87,14 @@ export default function EmploiDuTemps() {
       await charger();
     } catch (e) {
       setErreur(messageErreur(e));
-      // La source vient d'etre creee et sa premiere synchronisation a echoue :
-      // on la retire, sinon elle reste dans la liste avec zero seance et un
-      // lien dont on sait deja qu'il ne fonctionne pas.
+      // La source vient d'être créée et sa première synchronisation a échoué :
+      // on la retire, sinon elle reste dans la liste avec zéro séance et un
+      // lien dont on sait déjà qu'il ne fonctionne pas.
       if (creee) {
         try {
           await supprimerSource(creee);
         } catch {
-          // Tant pis, l'etudiant pourra la supprimer a la main.
+          // Tant pis, l'étudiant pourra la supprimer à la main.
         }
       }
       await charger();
@@ -124,377 +118,302 @@ export default function EmploiDuTemps() {
     }
   }
 
-  async function retirer(id: string) {
-    setEnCours(true);
-    try {
-      await supprimerSource(id);
-      await charger();
-    } catch (e) {
-      setErreur(messageErreur(e));
-    } finally {
-      setEnCours(false);
-    }
+  function confirmerRetrait(source: SourceAgenda) {
+    Alert.alert(
+      "Retirer cet agenda",
+      "Les séances importées depuis ce lien disparaissent de ta semaine.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Retirer",
+          style: "destructive",
+          onPress: async () => {
+            setEnCours(true);
+            try {
+              await supprimerSource(source.id);
+              await charger();
+            } catch (e) {
+              setErreur(messageErreur(e));
+            } finally {
+              setEnCours(false);
+            }
+          },
+        },
+      ],
+    );
   }
 
-  // Regroupement des seances par jour de la semaine affichee.
+  // Regroupement des séances par jour de la semaine affichée.
   const parJour: { jour: Date; seances: Seance[] }[] = [];
   for (let i = 0; i < 7; i += 1) {
     const jour = new Date(lundi);
     jour.setDate(jour.getDate() + i);
     const duJour = seances.filter(
-      (s) => s.debut.toDateString() === jour.toDateString(),
+      (x) =>
+        x.debut.getFullYear() === jour.getFullYear() &&
+        x.debut.getMonth() === jour.getMonth() &&
+        x.debut.getDate() === jour.getDate(),
     );
     if (duJour.length > 0) parJour.push({ jour, seances: duJour });
   }
 
+  const aujourdhui = new Date();
+  const libelleSemaine =
+    decalageSemaine === 0
+      ? "Cette semaine"
+      : lundi.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) +
+        " au " +
+        dimanche.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+
   return (
-    <SafeAreaView style={s.page}>
-      <KeyboardAvoidingView
-        style={s.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView contentContainerStyle={s.contenu} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => router.back()} style={s.retour}>
-            <Text style={s.retourTexte}>Retour</Text>
-          </Pressable>
+    <Ecran
+      clavier
+      chargement={chargement}
+      erreur={erreur}
+      entete={
+        <Entete
+          retour
+          surtitre="Espace privé"
+          titre="Mon emploi du temps"
+          sousTitre={
+            sources.length === 0
+              ? "Colle le lien de ton agenda universitaire, ta semaine se remplit toute seule."
+              : undefined
+          }
+        />
+      }
+    >
+      {!!info && <Alerte type="succes" texte={info} />}
 
-          <Text style={s.titre}>Mon emploi du temps</Text>
+      {/* Navigation de semaine. Toujours visible : sans elle, on croit que
+          l'app ne connaît que la semaine en cours. */}
+      <View style={s.navigation}>
+        <Pressable
+          onPress={() => setDecalageSemaine((d) => d - 1)}
+          hitSlop={8}
+          accessibilityLabel="Semaine précédente"
+          style={({ pressed }) => [s.fleche, pressed && { opacity: PRESSION }]}
+        >
+          <Ionicons name="chevron-back" size={18} color={Colors.neutre.encre} />
+        </Pressable>
+        <Pressable
+          onPress={() => setDecalageSemaine(0)}
+          style={({ pressed }) => [s.semaine, pressed && { opacity: PRESSION }]}
+        >
+          <Text style={Typo.corpsFort}>{libelleSemaine}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setDecalageSemaine((d) => d + 1)}
+          hitSlop={8}
+          accessibilityLabel="Semaine suivante"
+          style={({ pressed }) => [s.fleche, pressed && { opacity: PRESSION }]}
+        >
+          <Ionicons name="chevron-forward" size={18} color={Colors.neutre.encre} />
+        </Pressable>
+      </View>
 
-          {sources.length === 0 && !chargement && (
-            <View style={s.explication}>
-              <Text style={s.explicationTitre}>Colle le lien de ton agenda</Text>
-              <Text style={s.explicationTexte}>
-                Ton université publie déjà ton emploi du temps sous forme de lien
-                à synchroniser, depuis ADE ou Celcat. Cherche
-                &quot;exporter mon agenda&quot; sur ton espace numérique, copie le
-                lien qui se termine par .ics, et colle-le ici. Ta semaine se
-                remplit toute seule.
-              </Text>
-            </View>
-          )}
-
-          {sources.map((source) => (
-            <View key={source.id} style={s.source}>
-              <View style={s.flex}>
-                <Text style={s.sourceLibelle}>{source.libelle}</Text>
-                <Text style={s.sourceDetail} numberOfLines={1}>
-                  {source.nombreSeances} seances
-                  {source.derniereSynchro
-                    ? " · maj " +
-                      new Date(source.derniereSynchro).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                      })
-                    : " · jamais synchronisé"}
-                </Text>
-                {!!source.dernierStatut && source.dernierStatut !== "ok" && (
-                  <Text style={s.sourceErreur}>{source.dernierStatut}</Text>
-                )}
-              </View>
-              <Pressable
-                style={s.boutonSecondaire}
-                onPress={() => mettreAJour(source)}
-                onLongPress={() => retirer(source.id)}
-                disabled={enCours}
-              >
-                <Text style={s.boutonSecondaireTexte}>Mettre à jour</Text>
-              </Pressable>
-            </View>
-          ))}
-
-          {!formOuvert && (
-            <Pressable style={s.ajout} onPress={() => setFormOuvert(true)}>
-              <Text style={s.ajoutTexte}>
-                {sources.length === 0 ? "Ajouter mon agenda" : "Ajouter un autre agenda"}
-              </Text>
-            </Pressable>
-          )}
-
-          {formOuvert && (
-            <View style={s.form}>
-              <Text style={s.label}>Lien de l&apos;agenda</Text>
-              <TextInput
-                style={s.champ}
-                value={lien}
-                onChangeText={setLien}
-                placeholder="https://ade.unistra.fr/...ical"
-                placeholderTextColor={Colors.neutre.discret}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                editable={!enCours}
+      {parJour.length === 0 ? (
+        <EtatVide
+          icone="calendar-outline"
+          titre="Aucune séance cette semaine"
+          texte={
+            sources.length === 0
+              ? "Ton université publie déjà ton emploi du temps sous forme de lien à synchroniser, depuis ADE ou Celcat. Cherche « exporter mon agenda » sur ton espace numérique, copie le lien qui se termine par .ics, et colle-le ici."
+              : "Soit l'agenda n'a rien pour cette semaine, soit elle est vraiment vide. Les vacances existent."
+          }
+          action={
+            sources.length === 0 && !formOuvert ? (
+              <Bouton
+                titre="Ajouter mon agenda"
+                icone="link-outline"
+                onPress={() => setFormOuvert(true)}
               />
-              <Text style={s.aide}>
-                Les liens en webcal:// fonctionnent aussi, ils sont convertis.
-              </Text>
-
-              <Text style={[s.label, s.espace]}>Nom</Text>
-              <TextInput
-                style={s.champ}
-                value={libelle}
-                onChangeText={setLibelle}
-                placeholder="Mon emploi du temps"
-                placeholderTextColor={Colors.neutre.discret}
-                editable={!enCours}
-              />
-
-              <View style={s.actions}>
-                <Pressable
-                  style={s.annuler}
-                  onPress={() => setFormOuvert(false)}
-                  disabled={enCours}
-                >
-                  <Text style={s.annulerTexte}>Annuler</Text>
-                </Pressable>
-                <Pressable
-                  style={[s.valider, lien.trim().length < 8 && s.inactif]}
-                  onPress={ajouter}
-                  disabled={lien.trim().length < 8 || enCours}
-                >
-                  {enCours ? (
-                    <ActivityIndicator color={Colors.neutre.blanc} />
-                  ) : (
-                    <Text style={s.validerTexte}>Importer</Text>
-                  )}
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-          {!!info && <Text style={s.info}>{info}</Text>}
-
-          <View style={s.navigation}>
-            <Pressable
-              style={s.fleche}
-              onPress={() => setDecalageSemaine((n) => n - 1)}
-              disabled={enCours}
+            ) : undefined
+          }
+        />
+      ) : (
+        parJour.map(({ jour, seances: duJour }) => {
+          const cestAujourdhui =
+            jour.getFullYear() === aujourdhui.getFullYear() &&
+            jour.getMonth() === aujourdhui.getMonth() &&
+            jour.getDate() === aujourdhui.getDate();
+          return (
+            <Section
+              key={jour.toISOString()}
+              titre={formaterJourLong(jour) + (cestAujourdhui ? " · aujourd'hui" : "")}
             >
-              <Text style={s.flecheTexte}>Semaine précédente</Text>
-            </Pressable>
-            {decalageSemaine !== 0 && (
-              <Pressable style={s.fleche} onPress={() => setDecalageSemaine(0)}>
-                <Text style={s.flecheTexte}>Cette semaine</Text>
-              </Pressable>
-            )}
-            <Pressable
-              style={s.fleche}
-              onPress={() => setDecalageSemaine((n) => n + 1)}
-              disabled={enCours}
-            >
-              <Text style={s.flecheTexte}>Suivante</Text>
-            </Pressable>
-          </View>
-
-          {chargement ? (
-            <ActivityIndicator style={s.attente} size="large" color={Colors.prive.base} />
-          ) : parJour.length === 0 ? (
-            <View style={s.vide}>
-              <Text style={s.videTitre}>Aucune séance cette semaine</Text>
-              <Text style={s.videTexte}>
-                Soit l&apos;agenda n&apos;est pas encore importé, soit la semaine
-                est vraiment vide. Les vacances existent.
-              </Text>
-            </View>
-          ) : (
-            parJour.map(({ jour, seances: duJour }) => (
-              <View key={jour.toISOString()} style={s.groupe}>
-                <Text style={s.section}>{formaterJourLong(jour)}</Text>
-                <View style={s.liste}>
-                  {duJour.map((seance) => (
-                    <View key={seance.id} style={s.carte}>
-                      <View style={s.horaire}>
-                        <Text style={s.horaireDebut}>{formaterHeure(seance.debut)}</Text>
-                        <Text style={s.horaireFin}>{formaterHeure(seance.fin)}</Text>
-                      </View>
-                      <View style={s.barreVerticale} />
-                      <View style={s.flex}>
-                        <Text style={s.carteTitre}>{seance.intitule}</Text>
-                        {!!seance.salle && (
-                          <Text style={s.carteDetail}>{seance.salle}</Text>
-                        )}
-                      </View>
+              <Carte>
+                {duJour.map((x, i) => (
+                  <View key={x.id} style={[s.seance, i < duJour.length - 1 && s.trait]}>
+                    <View style={s.heures}>
+                      <Text style={s.heure}>{formaterHeure(x.debut)}</Text>
+                      <Text style={s.heureFin}>{formaterHeure(x.fin)}</Text>
                     </View>
-                  ))}
-                </View>
-              </View>
-            ))
-          )}
+                    <View
+                      style={[
+                        s.barre,
+                        cestAujourdhui && { backgroundColor: Colors.accent.base },
+                      ]}
+                    />
+                    <View style={s.flex}>
+                      <Text style={Typo.corpsFort} numberOfLines={2}>
+                        {x.intitule}
+                      </Text>
+                      {!!x.salle && <Text style={Typo.petit}>{x.salle}</Text>}
+                    </View>
+                  </View>
+                ))}
+              </Carte>
+            </Section>
+          );
+        })
+      )}
 
-          {sources.length > 0 && (
-            <Text style={s.astuce}>
-              Appui long sur &quot;Mettre à jour&quot; pour supprimer un agenda et
-              toutes ses séances.
-            </Text>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <Section
+        titre="Mes agendas"
+        lien={
+          !formOuvert
+            ? { libelle: sources.length ? "Ajouter" : "Ajouter un agenda", onPress: () => setFormOuvert(true) }
+            : undefined
+        }
+      >
+        {formOuvert && (
+          <Carte style={s.form}>
+            <Champ
+              label="Lien de l'agenda"
+              value={lien}
+              onChangeText={setLien}
+              placeholder="https://ade.unistra.fr/...ical"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              editable={!enCours}
+              aide="Les liens en webcal:// fonctionnent aussi, ils sont convertis."
+            />
+            <Champ
+              conteneur={s.espace}
+              label="Nom"
+              value={libelle}
+              onChangeText={setLibelle}
+              placeholder="Mon emploi du temps"
+              editable={!enCours}
+              aide="Facultatif."
+            />
+            <View style={s.actions}>
+              <Bouton
+                titre="Annuler"
+                variante="discret"
+                taille="sm"
+                onPress={() => setFormOuvert(false)}
+                desactive={enCours}
+              />
+              <Bouton
+                titre="Importer"
+                taille="sm"
+                icone="download-outline"
+                onPress={ajouter}
+                enCours={enCours}
+                desactive={lien.trim().length < 8}
+              />
+            </View>
+          </Carte>
+        )}
+
+        {sources.length > 0 && (
+          <Carte>
+            {sources.map((source, i) => (
+              <View key={source.id} style={[s.source, i < sources.length - 1 && s.trait]}>
+                <View style={s.flex}>
+                  <Text style={Typo.corpsFort} numberOfLines={1}>
+                    {source.libelle}
+                  </Text>
+                  <Text style={Typo.petit}>
+                    {source.nombreSeances + (source.nombreSeances > 1 ? " séances" : " séance")}
+                    {source.derniereSynchro
+                      ? " · maj " +
+                        new Date(source.derniereSynchro).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                        })
+                      : " · jamais synchronisé"}
+                  </Text>
+                </View>
+                <Bouton
+                  titre="Mettre à jour"
+                  variante="contour"
+                  taille="sm"
+                  onPress={() => mettreAJour(source)}
+                  desactive={enCours}
+                />
+                <Pressable
+                  onPress={() => confirmerRetrait(source)}
+                  hitSlop={10}
+                  accessibilityLabel="Retirer cet agenda"
+                  style={({ pressed }) => pressed && { opacity: PRESSION }}
+                >
+                  <Ionicons name="trash-outline" size={18} color={Colors.neutre.fantome} />
+                </Pressable>
+              </View>
+            ))}
+          </Carte>
+        )}
+      </Section>
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl * 2 },
-  retour: { marginBottom: Espacements.md },
-  retourTexte: { fontSize: 14, fontWeight: "600", color: Colors.prive.fonce },
-  titre: { fontSize: 28, fontWeight: "800", letterSpacing: -0.6, color: Colors.neutre.encre },
-  explication: {
-    marginTop: Espacements.lg,
-    backgroundColor: Colors.prive.clair,
-    borderRadius: Rayons.lg,
-    padding: Espacements.lg,
+  navigation: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Espacements.sm,
+    backgroundColor: Colors.neutre.surface,
+    borderRadius: Rayons.md,
+    padding: 6,
   },
-  explicationTitre: { fontSize: 15, fontWeight: "700", color: Colors.prive.fonce },
-  explicationTexte: {
+  fleche: {
+    width: 36,
+    height: 36,
+    borderRadius: Rayons.sm,
+    backgroundColor: Colors.neutre.creux,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  semaine: { flex: 1, alignItems: "center" },
+  seance: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Espacements.sm + 4,
+    paddingVertical: Espacements.sm + 4,
+  },
+  trait: { borderBottomWidth: 1, borderBottomColor: Colors.neutre.traitDoux },
+  heures: { width: 46 },
+  heure: {
+    fontFamily: Polices.corpsGras,
     fontSize: 14,
-    color: Colors.neutre.texte,
-    marginTop: 6,
-    lineHeight: 21,
+    color: Colors.neutre.encre,
+    letterSpacing: 0.2,
+  },
+  heureFin: { fontFamily: Polices.corps, fontSize: 12.5, color: Colors.neutre.discret },
+  barre: {
+    width: 3,
+    alignSelf: "stretch",
+    borderRadius: 2,
+    backgroundColor: Colors.prive.surligne,
+  },
+  form: { padding: Espacements.lg },
+  espace: { marginTop: Espacements.md },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: Espacements.sm,
+    marginTop: Espacements.lg,
   },
   source: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Espacements.md,
-    marginTop: Espacements.lg,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
-  },
-  sourceLibelle: { fontSize: 15, fontWeight: "700", color: Colors.neutre.encre },
-  sourceDetail: { fontSize: 12.5, color: Colors.neutre.discret, marginTop: 2 },
-  sourceErreur: { fontSize: 12.5, color: Colors.etat.erreur, marginTop: 4 },
-  boutonSecondaire: {
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 9,
-    borderRadius: Rayons.sm,
-    borderWidth: 1,
-    borderColor: Colors.prive.base,
-  },
-  boutonSecondaireTexte: { fontSize: 12.5, fontWeight: "700", color: Colors.prive.fonce },
-  ajout: {
-    marginTop: Espacements.md,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: Colors.prive.base,
-    borderRadius: Rayons.md,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  ajoutTexte: { fontSize: 15, fontWeight: "700", color: Colors.prive.fonce },
-  form: {
-    marginTop: Espacements.md,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.lg,
-    padding: Espacements.lg,
-  },
-  label: { fontSize: 13, fontWeight: "700", color: Colors.neutre.encre, marginBottom: 6 },
-  espace: { marginTop: Espacements.md },
-  champ: {
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.fond,
-  },
-  aide: { fontSize: 12.5, color: Colors.neutre.discret, marginTop: 6 },
-  actions: { flexDirection: "row", gap: Espacements.sm, marginTop: Espacements.lg },
-  annuler: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: Rayons.md,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    alignItems: "center",
-  },
-  annulerTexte: { fontSize: 15, fontWeight: "600", color: Colors.neutre.texte },
-  valider: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: Rayons.md,
-    backgroundColor: Colors.prive.fonce,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 46,
-  },
-  validerTexte: { fontSize: 15, fontWeight: "700", color: Colors.neutre.blanc },
-  inactif: { opacity: 0.4 },
-  erreur: {
-    marginTop: Espacements.md,
-    fontSize: 14,
-    color: Colors.etat.erreur,
-    lineHeight: 20,
-  },
-  info: { marginTop: Espacements.md, fontSize: 14, color: Colors.social.fonce },
-  navigation: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: Espacements.sm,
-    marginTop: Espacements.xl,
-  },
-  fleche: {
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 8,
-    borderRadius: Rayons.sm,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-  },
-  flecheTexte: { fontSize: 12.5, fontWeight: "600", color: Colors.neutre.texte },
-  attente: { marginTop: Espacements.xl },
-  vide: {
-    marginTop: Espacements.lg,
-    padding: Espacements.lg,
-    borderRadius: Rayons.lg,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-  },
-  videTitre: { fontSize: 15, fontWeight: "700", color: Colors.neutre.encre },
-  videTexte: { fontSize: 14, color: Colors.neutre.texte, marginTop: 4, lineHeight: 20 },
-  groupe: { marginTop: Espacements.lg },
-  section: {
-    fontSize: 12,
-    letterSpacing: 1.2,
-    fontWeight: "700",
-    color: Colors.neutre.discret,
-    textTransform: "uppercase",
-    marginBottom: Espacements.sm,
-  },
-  liste: { gap: Espacements.sm },
-  carte: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Espacements.md,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
-  },
-  horaire: { width: 48 },
-  horaireDebut: { fontSize: 14, fontWeight: "700", color: Colors.neutre.encre },
-  horaireFin: { fontSize: 12, color: Colors.neutre.discret, marginTop: 2 },
-  barreVerticale: {
-    width: 3,
-    alignSelf: "stretch",
-    borderRadius: 2,
-    backgroundColor: Colors.prive.base,
-  },
-  carteTitre: { fontSize: 15, fontWeight: "600", color: Colors.neutre.encre },
-  carteDetail: { fontSize: 13, color: Colors.neutre.discret, marginTop: 2 },
-  astuce: {
-    marginTop: Espacements.lg,
-    fontSize: 12.5,
-    color: Colors.neutre.discret,
-    textAlign: "center",
+    gap: Espacements.sm + 4,
+    paddingVertical: Espacements.sm + 4,
   },
 });

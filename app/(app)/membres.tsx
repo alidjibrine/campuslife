@@ -1,29 +1,23 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  basculerAbonnement,
-  listerMembres,
-  type Membre,
-} from "@/lib/communaute";
+import { StyleSheet, Text, View } from "react-native";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Champ from "@/components/Champ";
+import Bouton from "@/components/Bouton";
+import Avatar from "@/components/Avatar";
+import EtatVide from "@/components/EtatVide";
+import { basculerAbonnement, listerMembres, type Membre } from "@/lib/communaute";
 import { ouvrirConversation } from "@/lib/messages";
 import { getMonProfil, messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Espacements, Typo } from "@/constants/theme";
 
 /**
- * L'annuaire de mon etablissement.
+ * L'annuaire de mon établissement.
  *
- * La liste vient telle quelle de la base : les regles d'acces ne renvoient que
- * les profils rattaches a la meme ecole que moi.
+ * La liste vient telle quelle de la base : les règles d'accès ne renvoient que
+ * les profils rattachés à la même école que moi.
  */
 export default function Membres() {
   const router = useRouter();
@@ -31,8 +25,9 @@ export default function Membres() {
   const [ecole, setEcole] = useState<string | null>(null);
   const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
-  const [erreur, setErreur] = useState<string | null>(null);
+  const [rafraichit, setRafraichit] = useState(false);
   const [ouverture, setOuverture] = useState<string | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
     try {
@@ -44,6 +39,7 @@ export default function Membres() {
       setErreur(messageErreur(e));
     } finally {
       setChargement(false);
+      setRafraichit(false);
     }
   }, []);
 
@@ -53,7 +49,7 @@ export default function Membres() {
     }, [charger]),
   );
 
-  /** Ouvre la conversation avec ce membre, ou rejoint celle qui existe deja. */
+  /** Ouvre la conversation avec ce membre, ou rejoint celle qui existe déjà. */
   async function discuter(m: Membre) {
     if (ouverture) return;
     setOuverture(m.id);
@@ -83,165 +79,104 @@ export default function Membres() {
   const visibles = membres.filter((m) => {
     if (m.cestMoi) return false;
     if (!terme) return true;
-    const texte = [m.prenom, m.nom, m.filiere, m.anneeEtude]
+    return [m.prenom, m.nom, m.filiere, m.anneeEtude]
       .filter(Boolean)
       .join(" ")
-      .toLowerCase();
-    return texte.includes(terme);
+      .toLowerCase()
+      .includes(terme);
   });
 
   return (
-    <SafeAreaView style={s.page}>
-      <ScrollView contentContainerStyle={s.contenu} keyboardShouldPersistTaps="handled">
-        <Pressable onPress={() => router.back()} style={s.retour}>
-          <Text style={s.retourTexte}>Retour</Text>
-        </Pressable>
-
-        <Text style={s.titre}>Membres</Text>
-        <Text style={s.sousTitre}>{ecole ?? "Mon établissement"}</Text>
-
-        <TextInput
-          style={s.champ}
-          value={recherche}
-          onChangeText={setRecherche}
-          placeholder="Chercher un nom, une filière"
-          placeholderTextColor={Colors.neutre.discret}
-          autoCapitalize="none"
+    <Ecran
+      ton="social"
+      chargement={chargement}
+      erreur={erreur}
+      rafraichit={rafraichit}
+      surRafraichir={() => {
+        setRafraichit(true);
+        charger();
+      }}
+      entete={
+        <Entete
+          retour
+          ton="social"
+          surtitre={ecole ?? "Mon établissement"}
+          titre="Membres"
+          sousTitre={
+            visibles.length > 0
+              ? visibles.length + (visibles.length > 1 ? " étudiants" : " étudiant")
+              : undefined
+          }
         />
+      }
+    >
+      <Champ
+        ton="social"
+        value={recherche}
+        onChangeText={setRecherche}
+        placeholder="Chercher un nom, une filière"
+        autoCapitalize="none"
+      />
 
-        {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-
-        {chargement ? (
-          <ActivityIndicator style={s.attente} size="large" color={Colors.social.base} />
-        ) : visibles.length === 0 ? (
-          <View style={s.vide}>
-            <Text style={s.videTitre}>
-              {terme ? "Personne ne correspond" : "Tu es seul pour l'instant"}
-            </Text>
-            <Text style={s.videTexte}>
-              {terme
-                ? "Essaie un autre nom."
-                : "Aucun autre étudiant de ton école n'a encore rejoint CampusLife. Le premier cercle, c'est toi qui l'amènes."}
-            </Text>
-          </View>
-        ) : (
-          <View style={s.liste}>
-            {visibles.map((m) => (
-              <View key={m.id} style={s.carte}>
-                <View style={s.avatar}>
-                  <Text style={s.avatarTexte}>
-                    {((m.prenom?.[0] ?? "") + (m.nom?.[0] ?? "")).toUpperCase() || "?"}
-                  </Text>
-                </View>
-                <View style={s.flex}>
-                  <Text style={s.nom}>
-                    {[m.prenom, m.nom].filter(Boolean).join(" ") || "Étudiant"}
-                  </Text>
-                  <Text style={s.detail}>
-                    {[m.anneeEtude, m.filiere].filter(Boolean).join(" · ") ||
-                      "Profil incomplet"}
-                  </Text>
+      {visibles.length === 0 ? (
+        <EtatVide
+          ton="social"
+          icone={terme ? "search-outline" : "person-add-outline"}
+          titre={terme ? "Personne ne correspond" : "Tu es seul pour l'instant"}
+          texte={
+            terme
+              ? "Essaie un autre nom, une autre filière."
+              : "Aucun autre étudiant de ton école n'a encore rejoint CampusLife. Le premier cercle, c'est toi qui l'amènes."
+          }
+        />
+      ) : (
+        <View style={s.liste}>
+          {visibles.map((m) => {
+            const nom = [m.prenom, m.nom].filter(Boolean).join(" ") || "Étudiant";
+            return (
+              <Carte key={m.id}>
+                <View style={s.ligne}>
+                  <Avatar nom={nom} taille={44} />
+                  <View style={s.flex}>
+                    <Text style={Typo.corpsFort} numberOfLines={1}>
+                      {nom}
+                    </Text>
+                    <Text style={Typo.petit} numberOfLines={1}>
+                      {[m.anneeEtude, m.filiere].filter(Boolean).join(" · ") ||
+                        "Profil incomplet"}
+                    </Text>
+                  </View>
                 </View>
                 <View style={s.actions}>
-                  <Pressable
-                    style={[s.bouton, s.boutonPlein]}
+                  <Bouton
+                    titre="Message"
+                    ton="social"
+                    taille="sm"
+                    icone="chatbubble-outline"
                     onPress={() => discuter(m)}
-                    disabled={ouverture === m.id}
-                  >
-                    <Text style={[s.boutonTexte, s.boutonTexterPlein]}>
-                      {ouverture === m.id ? "..." : "Message"}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={[s.bouton, m.suivi && s.boutonSuivi]}
+                    enCours={ouverture === m.id}
+                  />
+                  <Bouton
+                    titre={m.suivi ? "Suivi" : "Suivre"}
+                    ton="social"
+                    taille="sm"
+                    variante={m.suivi ? "discret" : "contour"}
+                    icone={m.suivi ? "checkmark" : "add"}
                     onPress={() => suivre(m)}
-                  >
-                    <Text style={[s.boutonTexte, m.suivi && s.boutonTexteSuivi]}>
-                      {m.suivi ? "Suivi" : "Suivre"}
-                    </Text>
-                  </Pressable>
+                  />
                 </View>
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+              </Carte>
+            );
+          })}
+        </View>
+      )}
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl },
-  retour: { marginBottom: Espacements.md },
-  retourTexte: { fontSize: 14, fontWeight: "600", color: Colors.social.fonce },
-  titre: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-    color: Colors.neutre.encre,
-  },
-  sousTitre: {
-    fontSize: 13.5,
-    color: Colors.social.fonce,
-    marginTop: 2,
-    fontWeight: "600",
-  },
-  champ: {
-    marginTop: Espacements.lg,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.surface,
-  },
-  erreur: { marginTop: Espacements.md, fontSize: 14, color: Colors.etat.erreur },
-  attente: { marginTop: Espacements.xl },
-  vide: {
-    marginTop: Espacements.lg,
-    padding: Espacements.lg,
-    borderRadius: Rayons.lg,
-    backgroundColor: Colors.social.clair,
-  },
-  videTitre: { fontSize: 15, fontWeight: "700", color: Colors.social.fonce },
-  videTexte: { fontSize: 14, color: Colors.neutre.texte, marginTop: 4, lineHeight: 20 },
-  liste: { marginTop: Espacements.lg, gap: Espacements.sm },
-  carte: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Espacements.md,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.social.clair,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarTexte: { fontSize: 14, fontWeight: "800", color: Colors.social.fonce },
-  nom: { fontSize: 15, fontWeight: "700", color: Colors.neutre.encre },
-  detail: { fontSize: 13, color: Colors.neutre.discret, marginTop: 2 },
-  actions: { gap: 6, alignItems: "stretch" },
-  bouton: {
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 8,
-    borderRadius: Rayons.sm,
-    borderWidth: 1,
-    borderColor: Colors.social.base,
-  },
-  boutonSuivi: { backgroundColor: Colors.social.clair },
-  boutonPlein: { backgroundColor: Colors.social.base },
-  boutonTexterPlein: { color: "#FFFFFF" },
-  boutonTexte: { fontSize: 13, fontWeight: "700", color: Colors.social.fonce },
-  boutonTexteSuivi: { color: Colors.social.fonce },
+  liste: { gap: Espacements.sm + 4 },
+  ligne: { flexDirection: "row", alignItems: "center", gap: Espacements.md - 2 },
+  actions: { flexDirection: "row", gap: Espacements.sm, marginTop: Espacements.md - 2 },
 });

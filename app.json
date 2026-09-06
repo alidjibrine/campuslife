@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "campuslife",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -21,12 +21,19 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F5F3EE",
+          "resizeMode": "contain"
+        }
+      ],
       "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "alidjibrine"
+    "owner": "alidjibrine",
+    "backgroundColor": "#F5F3EE"
   }
 }

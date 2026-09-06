@@ -1,35 +1,26 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  creerCours,
-  JOURS,
-  listerCours,
-  supprimerCours,
-  type Cours,
-} from "@/lib/etudes";
+import { useFocusEffect } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Champ from "@/components/Champ";
+import Puce from "@/components/Puce";
+import Bouton from "@/components/Bouton";
+import Section from "@/components/Section";
+import EtatVide from "@/components/EtatVide";
+import { creerCours, JOURS, listerCours, supprimerCours, type Cours } from "@/lib/etudes";
 import { messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, Polices, Typo } from "@/constants/theme";
 
 /**
  * Mes cours, semaine type.
  *
- * Saisie manuelle pour l'instant. Au lot 3, l'import d'un emploi du temps
- * remplira cet ecran tout seul a partir d'un lien d'agenda.
+ * Saisie manuelle. L'import d'un emploi du temps remplit l'écran voisin tout
+ * seul à partir d'un lien d'agenda : cet écran-ci reste pour les créneaux qui
+ * n'y figurent pas.
  */
 export default function EcranCours() {
-  const router = useRouter();
   const [cours, setCours] = useState<Cours[]>([]);
   const [chargement, setChargement] = useState(true);
   const [formOuvert, setFormOuvert] = useState(false);
@@ -66,10 +57,7 @@ export default function EcranCours() {
   };
 
   const peutValider =
-    intitule.trim().length > 1 &&
-    heureValide(debut) &&
-    heureValide(fin) &&
-    !enCours;
+    intitule.trim().length > 1 && heureValide(debut) && heureValide(fin) && !enCours;
 
   async function ajouter() {
     if (!peutValider) return;
@@ -106,288 +94,189 @@ export default function EcranCours() {
   }
 
   return (
-    <SafeAreaView style={s.page}>
-      <KeyboardAvoidingView
-        style={s.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView contentContainerStyle={s.contenu} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => router.back()} style={s.retour}>
-            <Text style={s.retourTexte}>Retour</Text>
-          </Pressable>
-
-          <Text style={s.titre}>Mes cours</Text>
-          <Text style={s.accroche}>Ta semaine type, matière par matière.</Text>
-
-          {!formOuvert && (
-            <Pressable style={s.ajout} onPress={() => setFormOuvert(true)}>
-              <Text style={s.ajoutTexte}>Ajouter un cours</Text>
-            </Pressable>
-          )}
-
-          {formOuvert && (
-            <View style={s.form}>
-              <Text style={s.label}>Matière</Text>
-              <TextInput
-                style={s.champ}
-                value={intitule}
-                onChangeText={setIntitule}
-                placeholder="Droit civil"
-                placeholderTextColor={Colors.neutre.discret}
-                editable={!enCours}
+    <Ecran
+      clavier
+      chargement={chargement}
+      erreur={erreur}
+      entete={
+        <Entete
+          retour
+          surtitre="Semaine type"
+          titre="Mes cours"
+          sousTitre={
+            cours.length > 0
+              ? cours.length + (cours.length > 1 ? " créneaux" : " créneau")
+              : undefined
+          }
+          action={
+            !formOuvert ? (
+              <Bouton
+                titre="Ajouter"
+                taille="sm"
+                icone="add"
+                onPress={() => setFormOuvert(true)}
               />
+            ) : undefined
+          }
+        />
+      }
+    >
+      {formOuvert && (
+        <Carte style={s.form}>
+          <Champ
+            label="Intitulé"
+            value={intitule}
+            onChangeText={setIntitule}
+            placeholder="Droit civil"
+            editable={!enCours}
+          />
 
-              <Text style={[s.label, s.espace]}>Jour</Text>
-              <View style={s.puces}>
-                {JOURS.map((nom, i) => {
-                  const valeur = i + 1;
-                  const actif = jour === valeur;
-                  return (
-                    <Pressable
-                      key={nom}
-                      onPress={() => setJour(valeur)}
-                      disabled={enCours}
-                      style={[s.puce, actif && s.puceActive]}
-                    >
-                      <Text style={[s.puceTexte, actif && s.puceTexteActif]}>
-                        {nom.slice(0, 3)}
+          <View style={s.espace}>
+            <Text style={[Typo.petitFort, s.label]}>Jour</Text>
+            <View style={s.puces}>
+              {JOURS.map((j, i) => (
+                <Puce
+                  key={j}
+                  libelle={j.slice(0, 3)}
+                  actif={jour === i + 1}
+                  onPress={() => setJour(i + 1)}
+                  desactive={enCours}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={[s.espace, s.rangee]}>
+            <Champ
+              conteneur={s.flex}
+              label="Début"
+              value={debut}
+              onChangeText={setDebut}
+              placeholder="08:00"
+              keyboardType="numbers-and-punctuation"
+              editable={!enCours}
+            />
+            <Champ
+              conteneur={s.flex}
+              label="Fin"
+              value={fin}
+              onChangeText={setFin}
+              placeholder="10:00"
+              keyboardType="numbers-and-punctuation"
+              editable={!enCours}
+            />
+          </View>
+
+          <Champ
+            conteneur={s.espace}
+            label="Salle"
+            value={salle}
+            onChangeText={setSalle}
+            placeholder="Amphi 3"
+            editable={!enCours}
+            aide="Facultatif."
+          />
+
+          <View style={s.actions}>
+            <Bouton
+              titre="Annuler"
+              variante="discret"
+              taille="sm"
+              onPress={() => setFormOuvert(false)}
+              desactive={enCours}
+            />
+            <Bouton
+              titre="Ajouter"
+              taille="sm"
+              onPress={ajouter}
+              enCours={enCours}
+              desactive={!peutValider}
+            />
+          </View>
+        </Carte>
+      )}
+
+      {cours.length === 0 && !formOuvert ? (
+        <EtatVide
+          icone="school-outline"
+          titre="Aucun cours pour l'instant"
+          texte="Ajoute tes matières et leurs créneaux. Ou colle le lien de ton agenda universitaire, et tout se remplit d'un coup."
+          action={<Bouton titre="Ajouter un cours" icone="add" onPress={() => setFormOuvert(true)} />}
+        />
+      ) : (
+        JOURS.map((nomJour, i) => {
+          const duJour = cours.filter((c) => c.jour === i + 1);
+          if (duJour.length === 0) return null;
+          return (
+            <Section key={nomJour} titre={nomJour}>
+              <Carte>
+                {duJour.map((c, j) => (
+                  <View
+                    key={c.id}
+                    style={[s.creneau, j < duJour.length - 1 && s.trait]}
+                  >
+                    <View style={s.heures}>
+                      <Text style={s.heure}>{c.debut}</Text>
+                      <Text style={s.heureFin}>{c.fin}</Text>
+                    </View>
+                    <View style={s.barre} />
+                    <View style={s.flex}>
+                      <Text style={Typo.corpsFort} numberOfLines={2}>
+                        {c.intitule}
                       </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <View style={s.deuxColonnes}>
-                <View style={s.flex}>
-                  <Text style={[s.label, s.espace]}>Début</Text>
-                  <TextInput
-                    style={s.champ}
-                    value={debut}
-                    onChangeText={setDebut}
-                    placeholder="08:00"
-                    placeholderTextColor={Colors.neutre.discret}
-                    keyboardType="numbers-and-punctuation"
-                    editable={!enCours}
-                  />
-                </View>
-                <View style={s.flex}>
-                  <Text style={[s.label, s.espace]}>Fin</Text>
-                  <TextInput
-                    style={s.champ}
-                    value={fin}
-                    onChangeText={setFin}
-                    placeholder="10:00"
-                    placeholderTextColor={Colors.neutre.discret}
-                    keyboardType="numbers-and-punctuation"
-                    editable={!enCours}
-                  />
-                </View>
-              </View>
-
-              <Text style={[s.label, s.espace]}>Salle</Text>
-              <TextInput
-                style={s.champ}
-                value={salle}
-                onChangeText={setSalle}
-                placeholder="C2025"
-                placeholderTextColor={Colors.neutre.discret}
-                editable={!enCours}
-              />
-              <Text style={s.aide}>Facultatif.</Text>
-
-              <View style={s.actions}>
-                <Pressable
-                  style={s.annuler}
-                  onPress={() => setFormOuvert(false)}
-                  disabled={enCours}
-                >
-                  <Text style={s.annulerTexte}>Annuler</Text>
-                </Pressable>
-                <Pressable
-                  style={[s.valider, !peutValider && s.inactif]}
-                  onPress={ajouter}
-                  disabled={!peutValider}
-                >
-                  {enCours ? (
-                    <ActivityIndicator color={Colors.neutre.blanc} />
-                  ) : (
-                    <Text style={s.validerTexte}>Ajouter</Text>
-                  )}
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-
-          {chargement ? (
-            <ActivityIndicator style={s.attente} size="large" color={Colors.prive.base} />
-          ) : cours.length === 0 ? (
-            <View style={s.vide}>
-              <Text style={s.videTitre}>Aucun cours pour l&apos;instant</Text>
-              <Text style={s.videTexte}>
-                Ajoute tes matières et leurs créneaux. Au lot 3, un simple lien
-                d&apos;emploi du temps remplira tout ça d&apos;un coup.
-              </Text>
-            </View>
-          ) : (
-            JOURS.map((nom, i) => {
-              const duJour = cours.filter((c) => c.jour === i + 1);
-              if (duJour.length === 0) return null;
-              return (
-                <View key={nom} style={s.groupe}>
-                  <Text style={s.section}>{nom}</Text>
-                  <View style={s.liste}>
-                    {duJour.map((c) => (
-                      <Pressable
-                        key={c.id}
-                        style={s.carte}
-                        onLongPress={() => supprimer(c.id)}
-                      >
-                        <View style={s.horaire}>
-                          <Text style={s.horaireDebut}>{c.debut}</Text>
-                          <Text style={s.horaireFin}>{c.fin}</Text>
-                        </View>
-                        <View style={s.barreVerticale} />
-                        <View style={s.flex}>
-                          <Text style={s.carteTitre}>{c.intitule}</Text>
-                          {!!c.salle && <Text style={s.carteDetail}>{c.salle}</Text>}
-                        </View>
-                      </Pressable>
-                    ))}
+                      {!!c.salle && <Text style={Typo.petit}>{c.salle}</Text>}
+                    </View>
+                    <Bouton
+                      titre=""
+                      libelleAccessible={"Supprimer " + c.intitule}
+                      variante="discret"
+                      taille="sm"
+                      icone="trash-outline"
+                      onPress={() => supprimer(c.id)}
+                    />
                   </View>
-                </View>
-              );
-            })
-          )}
-
-          {cours.length > 0 && (
-            <Text style={s.astuce}>Appui long sur un cours pour le supprimer.</Text>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+                ))}
+              </Carte>
+            </Section>
+          );
+        })
+      )}
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl * 2 },
-  retour: { marginBottom: Espacements.md },
-  retourTexte: { fontSize: 14, fontWeight: "600", color: Colors.prive.fonce },
-  titre: { fontSize: 28, fontWeight: "800", letterSpacing: -0.6, color: Colors.neutre.encre },
-  accroche: { fontSize: 15, color: Colors.neutre.texte, marginTop: 4 },
-  ajout: {
-    marginTop: Espacements.lg,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: Colors.prive.base,
-    borderRadius: Rayons.md,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  ajoutTexte: { fontSize: 15, fontWeight: "700", color: Colors.prive.fonce },
-  form: {
-    marginTop: Espacements.lg,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.lg,
-    padding: Espacements.lg,
-  },
-  label: { fontSize: 13, fontWeight: "700", color: Colors.neutre.encre, marginBottom: 6 },
+  form: { padding: Espacements.lg },
   espace: { marginTop: Espacements.md },
-  champ: {
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.fond,
-  },
-  aide: { fontSize: 12.5, color: Colors.neutre.discret, marginTop: 6 },
-  puces: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  puce: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: Rayons.sm,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    backgroundColor: Colors.neutre.fond,
-  },
-  puceActive: { backgroundColor: Colors.prive.clair, borderColor: Colors.prive.base },
-  puceTexte: { fontSize: 13, fontWeight: "600", color: Colors.neutre.texte },
-  puceTexteActif: { color: Colors.prive.fonce },
-  deuxColonnes: { flexDirection: "row", gap: Espacements.md },
-  actions: { flexDirection: "row", gap: Espacements.sm, marginTop: Espacements.lg },
-  annuler: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: Rayons.md,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    alignItems: "center",
-  },
-  annulerTexte: { fontSize: 15, fontWeight: "600", color: Colors.neutre.texte },
-  valider: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: Rayons.md,
-    backgroundColor: Colors.prive.fonce,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 46,
-  },
-  validerTexte: { fontSize: 15, fontWeight: "700", color: Colors.neutre.blanc },
-  inactif: { opacity: 0.4 },
-  erreur: { marginTop: Espacements.md, fontSize: 14, color: Colors.etat.erreur },
-  attente: { marginTop: Espacements.xl },
-  vide: {
+  label: { marginBottom: 9, color: Colors.neutre.encre },
+  puces: { flexDirection: "row", flexWrap: "wrap", gap: Espacements.sm },
+  rangee: { flexDirection: "row", gap: Espacements.sm + 4 },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: Espacements.sm,
     marginTop: Espacements.lg,
-    padding: Espacements.lg,
-    borderRadius: Rayons.lg,
-    backgroundColor: Colors.prive.clair,
   },
-  videTitre: { fontSize: 15, fontWeight: "700", color: Colors.prive.fonce },
-  videTexte: { fontSize: 14, color: Colors.neutre.texte, marginTop: 4, lineHeight: 20 },
-  groupe: { marginTop: Espacements.lg },
-  section: {
-    fontSize: 12,
-    letterSpacing: 1.5,
-    fontWeight: "700",
-    color: Colors.neutre.discret,
-    textTransform: "uppercase",
-    marginBottom: Espacements.sm,
-  },
-  liste: { gap: Espacements.sm },
-  carte: {
+  creneau: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Espacements.md,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
+    gap: Espacements.sm + 4,
+    paddingVertical: Espacements.sm + 4,
   },
-  horaire: { width: 46 },
-  horaireDebut: { fontSize: 14, fontWeight: "700", color: Colors.neutre.encre },
-  horaireFin: { fontSize: 12, color: Colors.neutre.discret, marginTop: 2 },
-  barreVerticale: {
+  trait: { borderBottomWidth: 1, borderBottomColor: Colors.neutre.traitDoux },
+  heures: { width: 46 },
+  heure: {
+    fontFamily: Polices.corpsGras,
+    fontSize: 14,
+    color: Colors.neutre.encre,
+    letterSpacing: 0.2,
+  },
+  heureFin: { fontFamily: Polices.corps, fontSize: 12.5, color: Colors.neutre.discret },
+  barre: {
     width: 3,
     alignSelf: "stretch",
     borderRadius: 2,
-    backgroundColor: Colors.prive.base,
-  },
-  carteTitre: { fontSize: 15, fontWeight: "600", color: Colors.neutre.encre },
-  carteDetail: { fontSize: 13, color: Colors.neutre.discret, marginTop: 2 },
-  astuce: {
-    marginTop: Espacements.lg,
-    fontSize: 12.5,
-    color: Colors.neutre.discret,
-    textAlign: "center",
+    backgroundColor: Colors.prive.surligne,
   },
 });

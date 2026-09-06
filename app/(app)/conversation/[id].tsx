@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -9,10 +8,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import Champ from "@/components/Champ";
+import Avatar from "@/components/Avatar";
+import Alerte from "@/components/Alerte";
+import Squelette from "@/components/Squelette";
 import {
   changeDeJour,
   ecouterMessages,
@@ -27,15 +30,15 @@ import {
   type Message,
 } from "@/lib/messages";
 import { messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, PRESSION, Polices, Rayons, Typo } from "@/constants/theme";
 
 /**
- * Une discussion a deux.
+ * Une discussion à deux.
  *
- * Les messages arrivent en direct par le canal Supabase. On ajoute quand meme
- * le message envoye tout de suite dans la liste sans attendre le retour du
- * canal : sur un reseau lent, voir son propre message partir immediatement
- * change tout. Le doublon eventuel est filtre par identifiant.
+ * Les messages arrivent en direct par le canal Supabase. On ajoute quand même
+ * le message envoyé tout de suite dans la liste sans attendre le retour du
+ * canal : sur un réseau lent, voir son propre message partir immédiatement
+ * change tout. Le doublon éventuel est filtré par identifiant.
  */
 export default function ConversationEcran() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -140,15 +143,21 @@ export default function ConversationEcran() {
   return (
     <SafeAreaView style={s.page} edges={["top", "left", "right"]}>
       <View style={s.entete}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Text style={s.retour}>Retour</Text>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={10}
+          accessibilityLabel="Retour"
+          style={({ pressed }) => [s.retour, pressed && { opacity: PRESSION }]}
+        >
+          <Ionicons name="chevron-back" size={20} color={Colors.neutre.encre} />
         </Pressable>
+        <Avatar nom={titre} taille={38} ton="social" />
         <View style={s.flex}>
-          <Text style={s.titre} numberOfLines={1}>
+          <Text style={Typo.sousTitre} numberOfLines={1}>
             {titre}
           </Text>
           {!!sousTitre && (
-            <Text style={s.sousTitre} numberOfLines={1}>
+            <Text style={Typo.petit} numberOfLines={1}>
               {sousTitre}
             </Text>
           )}
@@ -161,18 +170,26 @@ export default function ConversationEcran() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
       >
         {chargement ? (
-          <ActivityIndicator style={s.attente} size="large" color={Colors.social.base} />
+          <View style={s.attente}>
+            <Squelette cartes={2} />
+          </View>
         ) : (
           <ScrollView
             ref={liste}
             contentContainerStyle={s.fil}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
             {messages.length === 0 && (
-              <View style={s.vide}>
-                <Text style={s.videTitre}>Rien pour l'instant</Text>
-                <Text style={s.videTexte}>
-                  Écris le premier message. Personne d'autre que vous deux ne le lira.
+              <View style={s.premier}>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={Colors.social.fonce}
+                />
+                <Text style={[Typo.corpsFort, s.premierTitre]}>Rien pour l&apos;instant</Text>
+                <Text style={[Typo.petit, s.premierTexte]}>
+                  Écris le premier message. Personne d&apos;autre que vous deux ne le lira.
                 </Text>
               </View>
             )}
@@ -180,11 +197,17 @@ export default function ConversationEcran() {
             {messages.map((m, i) => (
               <View key={m.id}>
                 {changeDeJour(m, messages[i - 1]) && (
-                  <Text style={s.jour}>{libelleJour(m.creeLe)}</Text>
+                  <View style={s.jour}>
+                    <Text style={s.jourTexte}>{libelleJour(m.creeLe)}</Text>
+                  </View>
                 )}
                 <Pressable
                   onLongPress={() => menu(m)}
-                  style={[s.bulle, m.cestMoi ? s.bulleMoi : s.bulleAutre]}
+                  style={({ pressed }) => [
+                    s.bulle,
+                    m.cestMoi ? s.bulleMoi : s.bulleAutre,
+                    pressed && m.cestMoi && { opacity: PRESSION },
+                  ]}
                 >
                   <Text style={[s.texte, m.cestMoi && s.texteMoi]}>{m.contenu}</Text>
                   <Text style={[s.heure, m.cestMoi && s.heureMoi]}>
@@ -196,24 +219,34 @@ export default function ConversationEcran() {
           </ScrollView>
         )}
 
-        {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
+        {!!erreur && (
+          <View style={s.erreur}>
+            <Alerte type="erreur" texte={erreur} />
+          </View>
+        )}
 
         <View style={s.barre}>
-          <TextInput
-            style={s.champ}
+          <Champ
+            ton="social"
+            conteneur={s.flex}
             value={brouillon}
             onChangeText={setBrouillon}
             placeholder="Écrire un message"
-            placeholderTextColor={Colors.neutre.discret}
             multiline
             maxLength={2000}
+            style={s.champ}
           />
           <Pressable
-            style={[s.envoi, (!brouillon.trim() || envoiEnCours) && s.envoiInactif]}
             onPress={envoyerMessage}
             disabled={!brouillon.trim() || envoiEnCours}
+            accessibilityLabel="Envoyer"
+            style={({ pressed }) => [
+              s.envoi,
+              (!brouillon.trim() || envoiEnCours) && s.envoiInactif,
+              pressed && { opacity: PRESSION },
+            ]}
           >
-            <Text style={s.envoiTexte}>{envoiEnCours ? "..." : "Envoyer"}</Text>
+            <Ionicons name="arrow-up" size={20} color={Colors.neutre.blanc} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -227,105 +260,98 @@ const s = StyleSheet.create({
   entete: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Espacements.md,
-    paddingHorizontal: Espacements.lg,
-    paddingVertical: Espacements.md,
+    gap: Espacements.sm + 2,
+    paddingHorizontal: Espacements.gouttiere - 6,
+    paddingVertical: Espacements.sm + 2,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutre.trait,
+    borderBottomColor: Colors.neutre.traitDoux,
     backgroundColor: Colors.neutre.surface,
   },
-  retour: { fontSize: 14, fontWeight: "600", color: Colors.social.fonce },
-  titre: { fontSize: 17, fontWeight: "800", color: Colors.neutre.encre },
-  sousTitre: { fontSize: 12.5, color: Colors.neutre.discret, marginTop: 1 },
-  attente: { marginTop: Espacements.xl },
+  retour: {
+    width: 34,
+    height: 34,
+    borderRadius: Rayons.rond,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  attente: { padding: Espacements.gouttiere },
   fil: {
-    padding: Espacements.lg,
-    paddingBottom: Espacements.md,
-    gap: 6,
+    paddingHorizontal: Espacements.gouttiere,
+    paddingTop: Espacements.md,
+    paddingBottom: Espacements.sm,
   },
-  vide: {
-    padding: Espacements.lg,
-    borderRadius: Rayons.lg,
+  premier: {
+    alignItems: "center",
     backgroundColor: Colors.social.clair,
+    borderRadius: Rayons.lg,
+    padding: Espacements.lg,
   },
-  videTitre: { fontSize: 15, fontWeight: "700", color: Colors.social.fonce },
-  videTexte: {
-    fontSize: 14,
-    color: Colors.neutre.texte,
-    marginTop: 4,
-    lineHeight: 20,
-  },
-  jour: {
-    alignSelf: "center",
-    marginVertical: Espacements.md,
-    fontSize: 12,
-    fontWeight: "700",
+  premierTitre: { marginTop: Espacements.sm },
+  premierTexte: { marginTop: 4, textAlign: "center" },
+  jour: { alignItems: "center", marginVertical: Espacements.md },
+  jourTexte: {
+    fontFamily: Polices.corpsFort,
+    fontSize: 11.5,
     color: Colors.neutre.discret,
+    backgroundColor: Colors.neutre.creux,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: Rayons.rond,
     textTransform: "capitalize",
+    overflow: "hidden",
   },
   bulle: {
-    maxWidth: "82%",
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 9,
-    borderRadius: Rayons.md,
-    marginTop: 4,
+    maxWidth: "84%",
+    paddingHorizontal: Espacements.md - 2,
+    paddingVertical: 10,
+    borderRadius: Rayons.lg,
+    marginTop: 5,
   },
   bulleMoi: {
     alignSelf: "flex-end",
     backgroundColor: Colors.social.base,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 5,
   },
   bulleAutre: {
     alignSelf: "flex-start",
     backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 5,
   },
-  texte: { fontSize: 15, lineHeight: 21, color: Colors.neutre.encre },
-  texteMoi: { color: "#FFFFFF" },
+  texte: {
+    fontFamily: Polices.corps,
+    fontSize: 15.5,
+    lineHeight: 22,
+    color: Colors.neutre.encre,
+  },
+  texteMoi: { color: Colors.neutre.blanc },
   heure: {
+    fontFamily: Polices.corps,
     fontSize: 10.5,
     marginTop: 3,
     alignSelf: "flex-end",
-    color: Colors.neutre.discret,
+    color: Colors.neutre.fantome,
   },
-  heureMoi: { color: "rgba(255,255,255,0.75)" },
-  erreur: {
-    paddingHorizontal: Espacements.lg,
-    paddingBottom: Espacements.sm,
-    fontSize: 13.5,
-    color: Colors.etat.erreur,
-  },
+  heureMoi: { color: Colors.neutre.voileTexte },
+  erreur: { paddingHorizontal: Espacements.gouttiere, paddingBottom: Espacements.sm },
   barre: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: Espacements.sm,
-    paddingHorizontal: Espacements.lg,
-    paddingTop: Espacements.sm,
+    paddingHorizontal: Espacements.gouttiere,
+    paddingTop: Espacements.sm + 2,
     paddingBottom: Espacements.lg,
     borderTopWidth: 1,
-    borderTopColor: Colors.neutre.trait,
+    borderTopColor: Colors.neutre.traitDoux,
     backgroundColor: Colors.neutre.surface,
   },
-  champ: {
-    flex: 1,
-    maxHeight: 120,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.fond,
-  },
+  champ: { minHeight: 46, maxHeight: 120, paddingVertical: 12 },
   envoi: {
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 12,
-    borderRadius: Rayons.sm,
+    width: 46,
+    height: 46,
+    borderRadius: Rayons.rond,
     backgroundColor: Colors.social.base,
+    alignItems: "center",
+    justifyContent: "center",
   },
   envoiInactif: { backgroundColor: Colors.neutre.trait },
-  envoiTexte: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
 });

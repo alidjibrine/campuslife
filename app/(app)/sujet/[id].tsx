@@ -1,19 +1,15 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Champ from "@/components/Champ";
+import Bouton from "@/components/Bouton";
+import Avatar from "@/components/Avatar";
+import EtatVide from "@/components/EtatVide";
+import Alerte from "@/components/Alerte";
 import {
   commenter,
   depuis,
@@ -26,12 +22,11 @@ import {
   type Publication,
 } from "@/lib/communaute";
 import { messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, Polices, Rayons, Typo } from "@/constants/theme";
 
-/** Une publication et ses reponses. */
+/** Une publication et ses réponses. */
 export default function Sujet() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const [publication, setPublication] = useState<Publication | null>(null);
   const [commentaires, setCommentaires] = useState<Commentaire[]>([]);
   const [reponse, setReponse] = useState("");
@@ -42,10 +37,7 @@ export default function Sujet() {
   const charger = useCallback(async () => {
     if (!id) return;
     try {
-      const [liste, c] = await Promise.all([
-        listerPublications(),
-        listerCommentaires(id),
-      ]);
+      const [liste, c] = await Promise.all([listerPublications(), listerCommentaires(id)]);
       setPublication(liste.find((p) => p.id === id) ?? null);
       setCommentaires(c);
       setErreur(null);
@@ -112,195 +104,148 @@ export default function Sujet() {
   }
 
   return (
-    <SafeAreaView style={s.page}>
-      <KeyboardAvoidingView
-        style={s.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={8}
-      >
-        <ScrollView contentContainerStyle={s.contenu} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => router.back()} style={s.retour}>
-            <Text style={s.retourTexte}>Retour au fil</Text>
-          </Pressable>
-
-          {chargement ? (
-            <ActivityIndicator style={s.attente} size="large" color={Colors.social.base} />
-          ) : !publication ? (
-            <Text style={s.vide}>
-              Cette publication n&apos;existe plus, ou elle appartient à une autre
-              ecole.
-            </Text>
-          ) : (
-            <>
-              <View style={s.carte}>
-                <View style={s.carteEntete}>
-                  <View style={s.avatar}>
-                    <Text style={s.avatarTexte}>
-                      {publication.auteurNom.slice(0, 1).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={s.flex}>
-                    <Text style={s.auteur}>{publication.auteurNom}</Text>
-                    <Text style={s.date}>
-                      {depuis(publication.creeLe)}
-                      {publication.categorie ? " · " + publication.categorie : ""}
-                    </Text>
-                  </View>
+    <Ecran
+      ton="social"
+      clavier
+      chargement={chargement}
+      erreur={erreur}
+      entete={<Entete retour ton="social" surtitre="Le fil" titre="Sujet" />}
+      bas={
+        publication ? (
+          <View style={s.barre}>
+            <Champ
+              ton="social"
+              conteneur={s.flex}
+              value={reponse}
+              onChangeText={setReponse}
+              placeholder="Écrire une réponse"
+              multiline
+              maxLength={2000}
+              style={s.champBas}
+            />
+            <Bouton
+              titre="Envoyer"
+              ton="social"
+              taille="sm"
+              onPress={envoyer}
+              enCours={enCours}
+              desactive={reponse.trim().length < 2}
+            />
+          </View>
+        ) : undefined
+      }
+    >
+      {!publication ? (
+        <Alerte
+          type="attention"
+          texte="Cette publication n'existe plus, ou elle appartient à une autre école."
+        />
+      ) : (
+        <>
+          <Carte>
+            <View style={s.entete}>
+              <Avatar nom={publication.auteurNom} taille={42} />
+              <View style={s.flex}>
+                <Text style={Typo.corpsFort} numberOfLines={1}>
+                  {publication.auteurNom || "Étudiant"}
+                </Text>
+                <Text style={Typo.petit}>{depuis(publication.creeLe)}</Text>
+              </View>
+              {!!publication.categorie && (
+                <View style={s.categorie}>
+                  <Text style={s.categorieTexte}>{publication.categorie}</Text>
                 </View>
-                <Text style={s.texte}>{publication.contenu}</Text>
-              </View>
-
-              <Text style={s.section}>
-                {commentaires.length === 0
-                  ? "Aucune réponse"
-                  : commentaires.length +
-                    (commentaires.length > 1 ? " réponses" : " réponse")}
-              </Text>
-
-              <View style={s.liste}>
-                {commentaires.map((c) => (
-                  <View key={c.id} style={s.reponseCarte}>
-                    <View style={s.carteEntete}>
-                      <View style={[s.avatar, s.avatarPetit]}>
-                        <Text style={s.avatarTexte}>
-                          {c.auteurNom.slice(0, 1).toUpperCase()}
-                        </Text>
-                      </View>
-                      <View style={s.flex}>
-                        <Text style={s.auteurPetit}>{c.auteurNom}</Text>
-                        <Text style={s.date}>{depuis(c.creeLe)}</Text>
-                      </View>
-                      <Pressable onPress={() => menuCommentaire(c)} hitSlop={10}>
-                        <Ionicons
-                          name="ellipsis-horizontal"
-                          size={16}
-                          color={Colors.neutre.discret}
-                        />
-                      </Pressable>
-                    </View>
-                    <Text style={s.reponseTexte}>{c.contenu}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-
-              <View style={s.zoneReponse}>
-                <TextInput
-                  style={s.champ}
-                  value={reponse}
-                  onChangeText={setReponse}
-                  placeholder="Écrire une réponse"
-                  placeholderTextColor={Colors.neutre.discret}
-                  multiline
-                  editable={!enCours}
+              )}
+            </View>
+            <Text style={[Typo.corps, s.corps]}>{publication.contenu}</Text>
+            <View style={s.stats}>
+              <View style={s.stat}>
+                <Ionicons
+                  name={publication.aimeParMoi ? "heart" : "heart-outline"}
+                  size={17}
+                  color={
+                    publication.aimeParMoi ? Colors.etat.erreur : Colors.neutre.discret
+                  }
                 />
-                <Pressable
-                  style={[s.envoyer, reponse.trim().length < 2 && s.inactif]}
-                  onPress={envoyer}
-                  disabled={reponse.trim().length < 2 || enCours}
-                >
-                  {enCours ? (
-                    <ActivityIndicator color={Colors.neutre.blanc} />
-                  ) : (
-                    <Ionicons name="arrow-up" size={20} color={Colors.neutre.blanc} />
-                  )}
-                </Pressable>
+                <Text style={s.statTexte}>{publication.jaime}</Text>
               </View>
-            </>
+              <View style={s.stat}>
+                <Ionicons
+                  name="chatbubble-outline"
+                  size={16}
+                  color={Colors.neutre.discret}
+                />
+                <Text style={s.statTexte}>{commentaires.length}</Text>
+              </View>
+            </View>
+          </Carte>
+
+          {commentaires.length === 0 ? (
+            <EtatVide
+              ton="social"
+              icone="chatbubble-outline"
+              titre="Aucune réponse"
+              texte="Personne n'a encore répondu. Une réponse utile vaut mieux que dix j'aime."
+            />
+          ) : (
+            <View style={s.reponses}>
+              {commentaires.map((c) => (
+                <Carte key={c.id} onLongPress={() => menuCommentaire(c)}>
+                  <View style={s.entete}>
+                    <Avatar nom={c.auteurNom} taille={34} />
+                    <View style={s.flex}>
+                      <Text style={[Typo.petitFort, s.nomReponse]} numberOfLines={1}>
+                        {c.auteurNom || "Étudiant"}
+                      </Text>
+                      <Text style={Typo.petit}>{depuis(c.creeLe)}</Text>
+                    </View>
+                    <Pressable
+                      onPress={() => menuCommentaire(c)}
+                      hitSlop={10}
+                      accessibilityLabel="Options de la réponse"
+                    >
+                      <Ionicons
+                        name="ellipsis-horizontal"
+                        size={17}
+                        color={Colors.neutre.fantome}
+                      />
+                    </Pressable>
+                  </View>
+                  <Text style={[Typo.corps, s.corpsReponse]}>{c.contenu}</Text>
+                </Carte>
+              ))}
+            </View>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </>
+      )}
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl },
-  retour: { marginBottom: Espacements.md },
-  retourTexte: { fontSize: 14, fontWeight: "600", color: Colors.social.fonce },
-  attente: { marginTop: Espacements.xl },
-  vide: { fontSize: 15, color: Colors.neutre.texte, marginTop: Espacements.lg },
-  carte: {
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.lg,
-    padding: Espacements.md,
-  },
-  carteEntete: { flexDirection: "row", alignItems: "center", gap: Espacements.sm },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  entete: { flexDirection: "row", alignItems: "center", gap: Espacements.sm + 2 },
+  categorie: {
     backgroundColor: Colors.social.clair,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: Rayons.rond,
   },
-  avatarPetit: { width: 28, height: 28, borderRadius: 14 },
-  avatarTexte: { fontSize: 13, fontWeight: "800", color: Colors.social.fonce },
-  auteur: { fontSize: 14.5, fontWeight: "700", color: Colors.neutre.encre },
-  auteurPetit: { fontSize: 13.5, fontWeight: "700", color: Colors.neutre.encre },
-  date: { fontSize: 12, color: Colors.neutre.discret, marginTop: 1 },
-  texte: {
-    fontSize: 15.5,
-    color: Colors.neutre.encre,
-    lineHeight: 23,
-    marginTop: Espacements.sm,
-  },
-  section: {
-    marginTop: Espacements.xl,
-    marginBottom: Espacements.sm,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    fontWeight: "700",
-    color: Colors.neutre.discret,
-    textTransform: "uppercase",
-  },
-  liste: { gap: Espacements.sm },
-  reponseCarte: {
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
-  },
-  reponseTexte: {
-    fontSize: 14.5,
-    color: Colors.neutre.texte,
-    lineHeight: 21,
-    marginTop: 6,
-  },
-  erreur: { marginTop: Espacements.md, fontSize: 14, color: Colors.etat.erreur },
-  zoneReponse: {
+  categorieTexte: { fontFamily: Polices.corpsFort, fontSize: 11, color: Colors.social.fonce },
+  corps: { marginTop: Espacements.md - 2, color: Colors.neutre.encre, fontSize: 16.5, lineHeight: 25 },
+  stats: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    gap: Espacements.sm,
-    marginTop: Espacements.lg,
+    gap: Espacements.lg,
+    marginTop: Espacements.md,
+    paddingTop: Espacements.sm + 4,
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutre.traitDoux,
   },
-  champ: {
-    flex: 1,
-    minHeight: 46,
-    maxHeight: 130,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.surface,
-    textAlignVertical: "top",
-  },
-  envoyer: {
-    width: 46,
-    height: 46,
-    borderRadius: Rayons.md,
-    backgroundColor: Colors.social.fonce,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  inactif: { opacity: 0.4 },
+  stat: { flexDirection: "row", alignItems: "center", gap: 6 },
+  statTexte: { fontFamily: Polices.corpsFort, fontSize: 13, color: Colors.neutre.discret },
+  reponses: { gap: Espacements.sm + 4 },
+  nomReponse: { color: Colors.neutre.encre },
+  corpsReponse: { marginTop: Espacements.sm + 2, color: Colors.neutre.encre },
+  barre: { flexDirection: "row", alignItems: "flex-end", gap: Espacements.sm },
+  champBas: { minHeight: 44, maxHeight: 110, paddingVertical: 11 },
 });

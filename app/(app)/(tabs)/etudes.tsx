@@ -1,196 +1,192 @@
 import { useCallback, useState } from "react";
-import { Link, useFocusEffect } from "expo-router";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect, useRouter, type Href } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Section from "@/components/Section";
+import Alerte from "@/components/Alerte";
 import { listerCours, listerDevoirs, listerNotes, moyenne } from "@/lib/etudes";
 import { listerSources } from "@/lib/agenda";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { messageErreur } from "@/lib/api";
+import { Colors, Espacements, Polices, Rayons, Typo } from "@/constants/theme";
+import type { Icone } from "@/components/Bouton";
 
-/** Le sommaire de l'espace prive : quatre entrees, avec leurs chiffres. */
+/**
+ * Le sommaire de l'espace privé.
+ *
+ * Quatre entrées, chacune avec son chiffre. Le chiffre est ce qui compte :
+ * un sommaire qui ne dit que des titres oblige à ouvrir chaque écran pour
+ * savoir s'il s'y passe quelque chose.
+ */
 export default function Etudes() {
+  const router = useRouter();
   const [devoirs, setDevoirs] = useState(0);
+  const [enRetard, setEnRetard] = useState(0);
   const [cours, setCours] = useState(0);
   const [moyenneGenerale, setMoyenneGenerale] = useState<number | null>(null);
+  const [nombreNotes, setNombreNotes] = useState(0);
   const [seancesImportees, setSeancesImportees] = useState(0);
   const [chargement, setChargement] = useState(true);
+  const [rafraichit, setRafraichit] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  const charger = useCallback(async () => {
+    try {
+      const [d, c, n, sources] = await Promise.all([
+        listerDevoirs(),
+        listerCours(),
+        listerNotes(),
+        listerSources(),
+      ]);
+      const aRendre = d.filter((x) => !x.fait);
+      const aujourdhui = new Date().toISOString().slice(0, 10);
+      setDevoirs(aRendre.length);
+      setEnRetard(aRendre.filter((x) => x.echeance && x.echeance < aujourdhui).length);
+      setCours(c.length);
+      setMoyenneGenerale(moyenne(n));
+      setNombreNotes(n.length);
+      setSeancesImportees(sources.reduce((total, s2) => total + s2.nombreSeances, 0));
+      setErreur(null);
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setChargement(false);
+      setRafraichit(false);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      let monte = true;
-      (async () => {
-        try {
-          const [d, c, n, s2] = await Promise.all([
-            listerDevoirs(),
-            listerCours(),
-            listerNotes(),
-            listerSources(),
-          ]);
-          if (!monte) return;
-          setDevoirs(d.filter((x) => !x.fait).length);
-          setCours(c.length);
-          setMoyenneGenerale(moyenne(n));
-          setSeancesImportees(
-            s2.reduce((total, source) => total + source.nombreSeances, 0),
-          );
-        } catch {
-          /* les ecrans de detail afficheront l'erreur */
-        } finally {
-          if (monte) setChargement(false);
-        }
-      })();
-      return () => {
-        monte = false;
-      };
-    }, []),
+      charger();
+    }, [charger]),
   );
 
-  const entrees = [
+  const entrees: {
+    route: string;
+    icone: Icone;
+    titre: string;
+    detail: string;
+    valeur: string;
+    alerte?: boolean;
+  }[] = [
     {
-      route: "/emploi-du-temps" as const,
-      icone: "calendar-outline" as const,
+      route: "/emploi-du-temps",
+      icone: "calendar",
       titre: "Mon emploi du temps",
       detail:
         seancesImportees > 0
-          ? seancesImportees + " séances importées"
+          ? "séances importées"
           : "Colle le lien de ton agenda universitaire",
+      valeur: seancesImportees > 0 ? String(seancesImportees) : "—",
     },
     {
-      route: "/devoirs" as const,
-      icone: "checkbox-outline" as const,
+      route: "/devoirs",
+      icone: "checkbox",
       titre: "Mes devoirs",
       detail:
-        devoirs > 0
-          ? devoirs + (devoirs > 1 ? " devoirs à rendre" : " devoir à rendre")
-          : "Rien à rendre",
+        enRetard > 0
+          ? enRetard + (enRetard > 1 ? " en retard" : " en retard")
+          : devoirs > 0
+            ? devoirs > 1
+              ? "devoirs à rendre"
+              : "devoir à rendre"
+            : "Rien à rendre",
+      valeur: devoirs > 0 ? String(devoirs) : "—",
+      alerte: enRetard > 0,
     },
     {
-      route: "/cours" as const,
-      icone: "school-outline" as const,
+      route: "/cours",
+      icone: "school",
       titre: "Mes cours",
-      detail: cours > 0 ? cours + " créneaux dans ma semaine" : "Aucun cours saisi",
+      detail: cours > 0 ? "créneaux dans ma semaine" : "Aucun cours saisi",
+      valeur: cours > 0 ? String(cours) : "—",
     },
     {
-      route: "/notes" as const,
-      icone: "stats-chart-outline" as const,
+      route: "/notes",
+      icone: "stats-chart",
       titre: "Mes notes",
       detail:
         moyenneGenerale === null
           ? "Aucune note"
-          : "Moyenne de " + moyenneGenerale.toFixed(2).replace(".", ",") + " / 20",
+          : "de moyenne · " + nombreNotes + (nombreNotes > 1 ? " notes" : " note"),
+      valeur:
+        moyenneGenerale === null
+          ? "—"
+          : moyenneGenerale.toFixed(2).replace(".", ","),
     },
   ];
 
   return (
-    <SafeAreaView style={s.page}>
-      <ScrollView contentContainerStyle={s.contenu}>
-        <Text style={s.titre}>Études</Text>
-        <Text style={s.accroche}>
-          Ton espace privé. Personne d&apos;autre n&apos;y a accès, pas même les
-          autres étudiants de ton école.
-        </Text>
-
-        {chargement && (
-          <ActivityIndicator style={s.attente} color={Colors.prive.base} />
-        )}
-
-        <View style={s.liste}>
-          {entrees.map((e) => (
-            <Link key={e.route} href={e.route} asChild>
-              <Pressable style={s.carte}>
-                <View style={s.icone}>
-                  <Ionicons name={e.icone} size={20} color={Colors.prive.fonce} />
-                </View>
-                <View style={s.flex}>
-                  <Text style={s.carteTitre}>{e.titre}</Text>
-                  <Text style={s.carteDetail}>{e.detail}</Text>
-                </View>
+    <Ecran
+      chargement={chargement}
+      erreur={erreur}
+      rafraichit={rafraichit}
+      surRafraichir={() => {
+        setRafraichit(true);
+        charger();
+      }}
+      entete={
+        <Entete
+          surtitre="Espace privé"
+          titre="Études"
+          sousTitre="Personne d'autre n'y a accès, pas même les autres étudiants de ton école."
+        />
+      }
+    >
+      <Section espace={Espacements.sm + 4}>
+        {entrees.map((e) => (
+          <Carte key={e.route} onPress={() => router.push(e.route as Href)}>
+            <View style={s.ligne}>
+              <View style={[s.icone, e.alerte && s.iconeAlerte]}>
                 <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={Colors.neutre.discret}
+                  name={e.icone}
+                  size={19}
+                  color={e.alerte ? Colors.etat.alerte : Colors.prive.base}
                 />
-              </Pressable>
-            </Link>
-          ))}
-        </View>
+              </View>
+              <View style={s.flex}>
+                <Text style={Typo.corpsFort}>{e.titre}</Text>
+                <Text style={[Typo.petit, s.detail, e.alerte && s.detailAlerte]}>
+                  {e.detail}
+                </Text>
+              </View>
+              <Text style={[s.valeur, e.alerte && s.valeurAlerte]}>{e.valeur}</Text>
+              <Ionicons name="chevron-forward" size={17} color={Colors.neutre.fantome} />
+            </View>
+          </Carte>
+        ))}
+      </Section>
 
-        <View style={s.aVenir}>
-          <Text style={s.aVenirTitre}>Plus tard</Text>
-          <Text style={s.aVenirTexte}>
-            Budget, Documents et Mémo font partie du projet mais attendent leur
-            tour, après la mise en ligne. C&apos;est écrit dans le programme.
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <Alerte
+        type="info"
+        titre="Budget, Documents et Mémo"
+        texte="Ils font partie du projet mais attendent leur tour, après la mise en ligne. C'est écrit dans le programme, pour ne pas y revenir chaque semaine."
+      />
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl },
-  titre: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-    color: Colors.neutre.encre,
-  },
-  accroche: {
-    fontSize: 14.5,
-    color: Colors.neutre.texte,
-    marginTop: 6,
-    lineHeight: 21,
-  },
-  attente: { marginTop: Espacements.lg },
-  liste: { marginTop: Espacements.lg, gap: Espacements.sm },
-  carte: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Espacements.md,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
-  },
+  ligne: { flexDirection: "row", alignItems: "center", gap: Espacements.md - 2 },
   icone: {
-    width: 38,
-    height: 38,
-    borderRadius: Rayons.sm,
+    width: 42,
+    height: 42,
+    borderRadius: Rayons.md,
     backgroundColor: Colors.prive.clair,
     alignItems: "center",
     justifyContent: "center",
   },
-  carteTitre: { fontSize: 15.5, fontWeight: "700", color: Colors.neutre.encre },
-  carteDetail: { fontSize: 13, color: Colors.neutre.discret, marginTop: 2 },
-  aVenir: {
-    marginTop: Espacements.xl,
-    padding: Espacements.lg,
-    borderRadius: Rayons.lg,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: Colors.neutre.trait,
+  iconeAlerte: { backgroundColor: Colors.accent.clair },
+  detail: { marginTop: 2 },
+  detailAlerte: { color: Colors.etat.alerte },
+  valeur: {
+    fontFamily: Polices.titre,
+    fontSize: 22,
+    letterSpacing: -0.6,
+    color: Colors.neutre.encre,
   },
-  aVenirTitre: {
-    fontSize: 11,
-    letterSpacing: 1.5,
-    fontWeight: "700",
-    color: Colors.neutre.discret,
-    textTransform: "uppercase",
-  },
-  aVenirTexte: {
-    fontSize: 13.5,
-    color: Colors.neutre.texte,
-    marginTop: 6,
-    lineHeight: 20,
-  },
+  valeurAlerte: { color: Colors.etat.alerte },
 });

@@ -1,27 +1,30 @@
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Champ from "@/components/Champ";
+import Bouton from "@/components/Bouton";
+import Alerte from "@/components/Alerte";
+import Carte from "@/components/Carte";
 import { connexion, inscription, messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, PRESSION, Rayons, Typo } from "@/constants/theme";
 
 /**
- * Connexion et inscription, sur un seul ecran.
+ * Connexion et inscription, sur un seul écran.
  *
- * Deux modes qui basculent l'un dans l'autre : l'etudiant ne se demande pas
- * s'il doit chercher un bouton "creer un compte" ailleurs.
+ * Deux modes qui basculent l'un dans l'autre : l'étudiant ne se demande pas
+ * s'il doit chercher un bouton « créer un compte » ailleurs.
  *
- * Le rattachement a l'ecole se fait tout seul, en base, a partir du domaine
- * de l'adresse e-mail. D'ou le conseil affiche sous le champ.
+ * Les deux traits de couleur en haut ne sont pas un ornement : ils annoncent
+ * la règle du produit, le bleu pour ce qui m'appartient, le vert pour ce que
+ * je partage. On les retrouve ensuite dans toute l'app.
  */
 export default function Login() {
   const [mode, setMode] = useState<"connexion" | "inscription">("connexion");
@@ -69,73 +72,72 @@ export default function Login() {
         <ScrollView
           contentContainerStyle={s.contenu}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View style={s.entete}>
-            <View style={s.pastilles}>
-              <View style={[s.pastille, { backgroundColor: Colors.prive.base }]} />
-              <View style={[s.pastille, { backgroundColor: Colors.social.base }]} />
+            <View style={s.traits}>
+              <View style={[s.trait, { backgroundColor: Colors.prive.base }]} />
+              <View style={[s.trait, { backgroundColor: Colors.social.base }]} />
             </View>
-            <Text style={s.titre}>CampusLife</Text>
-            <Text style={s.accroche}>
+            <Text style={s.marque}>CampusLife</Text>
+            <Text style={[Typo.corps, s.accroche]}>
               Ton agenda d&apos;études, et la communauté de ton école.
             </Text>
           </View>
 
-          <View style={s.carte}>
-            <Text style={s.label}>Adresse e-mail</Text>
-            <TextInput
-              style={s.champ}
+          <Carte style={s.carte}>
+            <Champ
+              label="Adresse e-mail"
               value={email}
               onChangeText={setEmail}
               placeholder="prenom.nom@etu.unistra.fr"
-              placeholderTextColor={Colors.neutre.discret}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
               inputMode="email"
               editable={!enCours}
+              aide={
+                estInscription
+                  ? "Ton adresse universitaire, c'est elle qui te rattache à ton école."
+                  : undefined
+              }
             />
-            {estInscription && (
-              <Text style={s.aide}>
-                Utilise ton adresse universitaire : c&apos;est elle qui te
-                rattache automatiquement à ton école.
-              </Text>
-            )}
 
-            <Text style={[s.label, { marginTop: Espacements.md }]}>
-              Mot de passe
-            </Text>
-            <TextInput
-              style={s.champ}
+            <Champ
+              conteneur={s.espace}
+              label="Mot de passe"
               value={motDePasse}
               onChangeText={setMotDePasse}
               placeholder="6 caractères minimum"
-              placeholderTextColor={Colors.neutre.discret}
               secureTextEntry
               autoCapitalize="none"
               editable={!enCours}
             />
 
-            {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-            {!!info && <Text style={s.info}>{info}</Text>}
+            {!!erreur && (
+              <View style={s.espace}>
+                <Alerte type="erreur" texte={erreur} />
+              </View>
+            )}
+            {!!info && (
+              <View style={s.espace}>
+                <Alerte type="succes" texte={info} />
+              </View>
+            )}
 
-            <Pressable
-              style={[s.bouton, !peutValider && s.boutonInactif]}
-              onPress={valider}
-              disabled={!peutValider}
-            >
-              {enCours ? (
-                <ActivityIndicator color={Colors.neutre.blanc} />
-              ) : (
-                <Text style={s.boutonTexte}>
-                  {estInscription ? "Créer mon compte" : "Me connecter"}
-                </Text>
-              )}
-            </Pressable>
-          </View>
+            <View style={s.espace}>
+              <Bouton
+                titre={estInscription ? "Créer mon compte" : "Me connecter"}
+                pleineLargeur
+                enCours={enCours}
+                desactive={!peutValider}
+                onPress={valider}
+              />
+            </View>
+          </Carte>
 
           <Pressable
-            style={s.bascule}
+            style={({ pressed }) => [s.bascule, pressed && { opacity: PRESSION }]}
             onPress={() => {
               setMode(estInscription ? "connexion" : "inscription");
               setErreur(null);
@@ -143,7 +145,7 @@ export default function Login() {
             }}
             disabled={enCours}
           >
-            <Text style={s.basculeTexte}>
+            <Text style={[Typo.petitFort, s.basculeTexte]}>
               {estInscription
                 ? "J'ai déjà un compte, me connecter"
                 : "Pas encore de compte ? En créer un"}
@@ -159,82 +161,24 @@ const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
   contenu: {
-    padding: Espacements.lg,
-    paddingTop: Espacements.xl,
+    padding: Espacements.gouttiere,
+    paddingBottom: Espacements.xl,
     flexGrow: 1,
     justifyContent: "center",
   },
   entete: { marginBottom: Espacements.xl },
-  pastilles: { flexDirection: "row", gap: 6, marginBottom: Espacements.md },
-  pastille: { width: 26, height: 8, borderRadius: 4 },
-  titre: {
-    fontSize: 38,
-    fontWeight: "800",
-    letterSpacing: -0.8,
+  traits: { flexDirection: "row", gap: 6, marginBottom: Espacements.md },
+  trait: { width: 30, height: 7, borderRadius: Rayons.rond },
+  marque: {
+    fontFamily: Typo.grandTitre.fontFamily,
+    fontSize: 40,
+    lineHeight: 44,
+    letterSpacing: -1.2,
     color: Colors.neutre.encre,
   },
-  accroche: {
-    fontSize: 16,
-    color: Colors.neutre.texte,
-    marginTop: Espacements.sm,
-    lineHeight: 23,
-  },
-  carte: {
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.lg,
-    padding: Espacements.lg,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.neutre.encre,
-    marginBottom: Espacements.xs + 2,
-  },
-  champ: {
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 13,
-    fontSize: 16,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.fond,
-  },
-  aide: {
-    fontSize: 12.5,
-    color: Colors.neutre.discret,
-    marginTop: Espacements.xs + 2,
-    lineHeight: 18,
-  },
-  erreur: {
-    marginTop: Espacements.md,
-    fontSize: 14,
-    color: Colors.etat.erreur,
-    lineHeight: 20,
-  },
-  info: {
-    marginTop: Espacements.md,
-    fontSize: 14,
-    color: Colors.social.fonce,
-    lineHeight: 20,
-  },
-  bouton: {
-    marginTop: Espacements.lg,
-    backgroundColor: Colors.prive.fonce,
-    borderRadius: Rayons.md,
-    paddingVertical: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 50,
-  },
-  boutonInactif: { opacity: 0.4 },
-  boutonTexte: { color: Colors.neutre.blanc, fontSize: 16, fontWeight: "700" },
-  bascule: { marginTop: Espacements.lg, alignItems: "center" },
-  basculeTexte: {
-    fontSize: 14.5,
-    color: Colors.prive.fonce,
-    fontWeight: "600",
-  },
+  accroche: { marginTop: Espacements.sm, maxWidth: 320 },
+  carte: { padding: Espacements.lg },
+  espace: { marginTop: Espacements.md },
+  bascule: { marginTop: Espacements.lg, alignItems: "center", paddingVertical: 6 },
+  basculeTexte: { color: Colors.prive.fonce },
 });

@@ -1,36 +1,83 @@
+import { useCallback, useEffect, useState } from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "@/constants/theme";
+import { Platform } from "react-native";
+import { supabase } from "@/lib/supabase";
+import { listerConversations } from "@/lib/messages";
+import { Colors, Polices } from "@/constants/theme";
 
 /**
- * Les cinq onglets de CampusLife.
+ * Les cinq onglets.
  *
- * Mon QG et Etudes sont l'espace prive, Communaute et Messages forment
- * l'espace social.
- * L'ordre suit celui du diagramme de cadrage : ce que je garde d'abord,
- * ce que je partage ensuite.
+ * La couleur active change d'un onglet à l'autre, et ce n'est pas une
+ * fantaisie : bleu pour ce qui m'appartient, vert pour ce que je partage.
+ * L'étudiant apprend la règle du produit rien qu'en naviguant.
+ *
+ * Le compteur de messages non lus se rafraîchit tout seul : on écoute les
+ * insertions dans la table des messages, les règles d'accès de la base ne
+ * laissant passer que les conversations dont on fait partie.
  */
 export default function OngletsLayout() {
+  const [nonLus, setNonLus] = useState(0);
+
+  const compter = useCallback(async () => {
+    try {
+      const liste = await listerConversations();
+      setNonLus(liste.reduce((somme, c) => somme + c.nonLus, 0));
+    } catch {
+      // Un compteur absent vaut mieux qu'un écran en erreur.
+    }
+  }, []);
+
+  useEffect(() => {
+    compter();
+    const canal = supabase
+      .channel("compteur-messages")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => {
+        compter();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(canal);
+    };
+  }, [compter]);
+
   return (
     <Tabs
       initialRouteName="qg"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.prive.fonce,
         tabBarInactiveTintColor: Colors.neutre.discret,
         tabBarStyle: {
           backgroundColor: Colors.neutre.surface,
-          borderTopColor: Colors.neutre.trait,
+          borderTopColor: Colors.neutre.traitDoux,
+          borderTopWidth: 1,
+          height: Platform.OS === "ios" ? 88 : 64,
+          paddingTop: 8,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarLabelStyle: {
+          fontFamily: Polices.corpsFort,
+          fontSize: 10.5,
+          letterSpacing: 0.1,
+          marginTop: 2,
+        },
+        tabBarBadgeStyle: {
+          backgroundColor: Colors.etat.erreur,
+          fontFamily: Polices.corpsGras,
+          fontSize: 10.5,
+          minWidth: 18,
+          height: 18,
+          lineHeight: 14,
+        },
       }}
     >
       <Tabs.Screen
         name="qg"
         options={{
           title: "Mon QG",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="today-outline" size={size} color={color} />
+          tabBarActiveTintColor: Colors.prive.base,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "today" : "today-outline"} size={size} color={color} />
           ),
         }}
       />
@@ -38,8 +85,9 @@ export default function OngletsLayout() {
         name="etudes"
         options={{
           title: "Études",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book-outline" size={size} color={color} />
+          tabBarActiveTintColor: Colors.prive.base,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "book" : "book-outline"} size={size} color={color} />
           ),
         }}
       />
@@ -47,8 +95,9 @@ export default function OngletsLayout() {
         name="communaute"
         options={{
           title: "Communauté",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
+          tabBarActiveTintColor: Colors.social.base,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "people" : "people-outline"} size={size} color={color} />
           ),
         }}
       />
@@ -56,8 +105,14 @@ export default function OngletsLayout() {
         name="messages"
         options={{
           title: "Messages",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-outline" size={size} color={color} />
+          tabBarActiveTintColor: Colors.social.base,
+          tabBarBadge: nonLus > 0 ? (nonLus > 99 ? "99+" : nonLus) : undefined,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "chatbubble" : "chatbubble-outline"}
+              size={size}
+              color={color}
+            />
           ),
         }}
       />
@@ -65,8 +120,9 @@ export default function OngletsLayout() {
         name="profil"
         options={{
           title: "Profil",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          tabBarActiveTintColor: Colors.prive.base,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
           ),
         }}
       />

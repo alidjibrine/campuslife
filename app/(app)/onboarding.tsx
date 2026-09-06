@@ -1,17 +1,15 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Champ from "@/components/Champ";
+import Puce from "@/components/Puce";
+import Bouton from "@/components/Bouton";
+import Alerte from "@/components/Alerte";
+import Section from "@/components/Section";
 import {
   getMonProfil,
   listerEcoles,
@@ -21,22 +19,22 @@ import {
   type Ecole,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, PRESSION, Rayons, Typo } from "@/constants/theme";
 
 const ANNEES = ["L1", "L2", "L3", "M1", "M2", "Autre"];
 
 /**
  * Onboarding du profil, obligatoire avant d'entrer dans l'app.
  *
- * L'ecole ne se choisit pas. Elle decoule du domaine de l'adresse
+ * L'école ne se choisit pas. Elle découle du domaine de l'adresse
  * universitaire, et la base refuse toute autre valeur (migration 011). Il y
- * avait ici, jusqu'au 6 septembre 2026, une liste deroulante permettant de se
- * declarer dans l'etablissement de son choix : c'etait la faille qui annulait
- * toute la regle de communaute fermee.
+ * avait ici, jusqu'au 6 septembre 2026, une liste déroulante permettant de se
+ * déclarer dans l'établissement de son choix : c'était la faille qui annulait
+ * toute la règle de communauté fermée.
  *
- * Si le domaine n'est reconnu par aucun etablissement, l'etudiant ne peut pas
- * entrer. C'est le prix d'une communaute fermee, et c'est assume. Le bouton de
- * verification sert au cas ou l'ecole aurait ete ajoutee depuis l'inscription.
+ * Si le domaine n'est reconnu par aucun établissement, l'étudiant ne peut pas
+ * entrer. C'est le prix d'une communauté fermée, et c'est assumé. Le bouton de
+ * vérification sert au cas où l'école aurait été ajoutée depuis l'inscription.
  */
 export default function Onboarding() {
   const router = useRouter();
@@ -82,7 +80,7 @@ export default function Onboarding() {
 
   const complet = prenom.trim() && nom.trim() && annee && ecoleId;
 
-  /** Redemande le rattachement, au cas ou l'ecole aurait ete ajoutee depuis. */
+  /** Redemande le rattachement, au cas où l'école aurait été ajoutée depuis. */
   async function verifierEcole() {
     setErreur(null);
     setVerification(true);
@@ -92,9 +90,7 @@ export default function Onboarding() {
         setEcoleDetectee(ecole);
         setEcoleId(ecole.id);
       } else {
-        setErreur(
-          "Ton adresse n'est toujours reconnue par aucun établissement.",
-        );
+        setErreur("Ton adresse n'est toujours reconnue par aucun établissement.");
       }
     } catch (e) {
       setErreur(messageErreur(e));
@@ -121,269 +117,155 @@ export default function Onboarding() {
     }
   }
 
-  if (chargement) {
-    return (
-      <View style={s.attente}>
-        <ActivityIndicator size="large" color={Colors.prive.base} />
-      </View>
-    );
-  }
-
   return (
-    <SafeAreaView style={s.page}>
-      <KeyboardAvoidingView
-        style={s.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView contentContainerStyle={s.contenu} keyboardShouldPersistTaps="handled">
-          <Text style={s.surtitre}>PREMIÈRE ÉTAPE</Text>
-          <Text style={s.titre}>Qui es-tu ?</Text>
-          <Text style={s.accroche}>
-            Trois informations, une fois pour toutes. Elles servent à t&apos;afficher
-            dans la communauté de ton école.
-          </Text>
+    <Ecran
+      clavier
+      chargement={chargement}
+      erreur={erreur}
+      entete={
+        <Entete
+          surtitre="Première étape"
+          titre="Qui es-tu ?"
+          sousTitre="Trois informations, une fois pour toutes. Elles servent à t'afficher dans la communauté de ton école."
+        />
+      }
+    >
+      <Carte style={s.bloc}>
+        <Champ
+          label="Prénom"
+          value={prenom}
+          onChangeText={setPrenom}
+          placeholder="Ali"
+          editable={!enCours}
+        />
+        <Champ
+          conteneur={s.espace}
+          label="Nom"
+          value={nom}
+          onChangeText={setNom}
+          placeholder="Djibrine"
+          editable={!enCours}
+        />
 
-          <View style={s.bloc}>
-            <Text style={s.label}>Prénom</Text>
-            <TextInput
-              style={s.champ}
-              value={prenom}
-              onChangeText={setPrenom}
-              placeholder="Ali"
-              placeholderTextColor={Colors.neutre.discret}
-              editable={!enCours}
-            />
-
-            <Text style={[s.label, s.espace]}>Nom</Text>
-            <TextInput
-              style={s.champ}
-              value={nom}
-              onChangeText={setNom}
-              placeholder="Djibrine"
-              placeholderTextColor={Colors.neutre.discret}
-              editable={!enCours}
-            />
-
-            <Text style={[s.label, s.espace]}>Année d&apos;étude</Text>
-            <View style={s.puces}>
-              {ANNEES.map((a) => {
-                const actif = annee === a;
-                return (
-                  <Pressable
-                    key={a}
-                    onPress={() => setAnnee(a)}
-                    disabled={enCours}
-                    style={[s.puce, actif && s.puceActive]}
-                  >
-                    <Text style={[s.puceTexte, actif && s.puceTexteActif]}>{a}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <Text style={[s.label, s.espace]}>Filière</Text>
-            <TextInput
-              style={s.champ}
-              value={filiere}
-              onChangeText={setFiliere}
-              placeholder="Droit, informatique, gestion..."
-              placeholderTextColor={Colors.neutre.discret}
-              editable={!enCours}
-            />
-            <Text style={s.aide}>Facultatif.</Text>
+        <View style={s.espace}>
+          <Text style={[Typo.petitFort, s.label]}>Année d&apos;étude</Text>
+          <View style={s.puces}>
+            {ANNEES.map((a) => (
+              <Puce
+                key={a}
+                libelle={a}
+                actif={annee === a}
+                onPress={() => setAnnee(a)}
+                desactive={enCours}
+              />
+            ))}
           </View>
+        </View>
 
-          <View style={s.bloc}>
-            <Text style={s.label}>Mon école</Text>
-            {ecoleDetectee ? (
-              <View style={s.detectee}>
-                <Text style={s.detecteeNom}>{ecoleDetectee.nom}</Text>
-                <Text style={s.detecteeVille}>
+        <Champ
+          conteneur={s.espace}
+          label="Filière"
+          value={filiere}
+          onChangeText={setFiliere}
+          placeholder="Droit, informatique, gestion..."
+          editable={!enCours}
+          aide="Facultatif."
+        />
+      </Carte>
+
+      <Section titre="Mon école">
+        {ecoleDetectee ? (
+          <Carte style={s.detectee}>
+            <View style={s.detecteeRangee}>
+              <View style={s.detecteeRond}>
+                <Ionicons name="school" size={20} color={Colors.prive.fonce} />
+              </View>
+              <View style={s.flex}>
+                <Text style={[Typo.corpsFort, s.detecteeNom]}>{ecoleDetectee.nom}</Text>
+                <Text style={[Typo.petit, s.detecteeVille]}>
                   {ecoleDetectee.ville} · reconnue à ton adresse e-mail
                 </Text>
               </View>
-            ) : (
-              <>
-                <Text style={s.aide}>
-                  Ton adresse e-mail n&apos;est reconnue par aucun
-                  établissement. CampusLife est une communauté fermée : le
-                  rattachement se fait uniquement par l&apos;adresse
-                  universitaire, il ne se choisit pas.
-                </Text>
+              <Ionicons name="checkmark-circle" size={22} color={Colors.etat.succes} />
+            </View>
+          </Carte>
+        ) : (
+          <>
+            <Alerte
+              type="attention"
+              titre="Aucun établissement reconnu"
+              texte="CampusLife est une communauté fermée : le rattachement se fait uniquement par l'adresse universitaire, il ne se choisit pas."
+            />
+            <Bouton
+              titre="Vérifier à nouveau"
+              variante="contour"
+              icone="refresh-outline"
+              onPress={verifierEcole}
+              enCours={verification}
+              desactive={enCours}
+            />
+            <Carte variante="creux">
+              <Text style={Typo.etiquette}>Établissements couverts aujourd&apos;hui</Text>
+              <View style={s.listeEcoles}>
+                {ecoles.map((e) => (
+                  <View key={e.id} style={s.ligneEcole}>
+                    <Ionicons name="ellipse" size={6} color={Colors.neutre.fantome} />
+                    <Text style={Typo.corps}>
+                      {e.nom} <Text style={s.ville}>· {e.ville}</Text>
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={[Typo.petit, s.aide]}>
+                La tienne n&apos;y est pas ? Écris-moi avec ton adresse universitaire, je
+                l&apos;ajoute, et tu reviens appuyer sur Vérifier à nouveau.
+              </Text>
+            </Carte>
+          </>
+        )}
+      </Section>
 
-                <Pressable
-                  style={s.verifier}
-                  onPress={verifierEcole}
-                  disabled={verification || enCours}
-                >
-                  <Text style={s.verifierTexte}>
-                    {verification ? "Vérification..." : "Vérifier à nouveau"}
-                  </Text>
-                </Pressable>
+      <Bouton
+        titre="C'est parti"
+        icone="arrow-forward"
+        pleineLargeur
+        onPress={enregistrer}
+        enCours={enCours}
+        desactive={!complet}
+      />
 
-                <Text style={[s.aide, s.espace]}>
-                  Établissements couverts aujourd&apos;hui :
-                </Text>
-                <View style={s.liste}>
-                  {ecoles.map((e) => (
-                    <View key={e.id} style={s.ligneEcole}>
-                      <View style={s.flex}>
-                        <Text style={s.ecoleNom}>{e.nom}</Text>
-                        <Text style={s.ecoleVille}>{e.ville}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-                <Text style={s.aide}>
-                  La tienne n&apos;y est pas ? Écris-moi avec ton adresse
-                  universitaire, je l&apos;ajoute, et tu reviens appuyer sur
-                  Vérifier à nouveau.
-                </Text>
-              </>
-            )}
-          </View>
-
-          {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-
-          <Pressable
-            style={[s.bouton, !complet && s.boutonInactif]}
-            onPress={enregistrer}
-            disabled={!complet || enCours}
-          >
-            {enCours ? (
-              <ActivityIndicator color={Colors.neutre.blanc} />
-            ) : (
-              <Text style={s.boutonTexte}>C&apos;est parti</Text>
-            )}
-          </Pressable>
-
-          <Pressable style={s.lien} onPress={deconnexion} disabled={enCours}>
-            <Text style={s.lienTexte}>Me déconnecter</Text>
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <Pressable
+        onPress={deconnexion}
+        disabled={enCours}
+        style={({ pressed }) => [s.sortie, pressed && { opacity: PRESSION }]}
+      >
+        <Text style={Typo.petit}>Me déconnecter</Text>
+      </Pressable>
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  attente: {
-    flex: 1,
-    backgroundColor: Colors.neutre.fond,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl * 2 },
-  surtitre: {
-    fontSize: 11,
-    letterSpacing: 2,
-    fontWeight: "600",
-    color: Colors.prive.fonce,
-  },
-  titre: {
-    fontSize: 30,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-    color: Colors.neutre.encre,
-    marginTop: Espacements.xs,
-  },
-  accroche: {
-    fontSize: 15,
-    color: Colors.neutre.texte,
-    marginTop: Espacements.sm,
-    lineHeight: 22,
-  },
-  bloc: {
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.lg,
-    padding: Espacements.lg,
-    marginTop: Espacements.lg,
-  },
-  label: { fontSize: 13, fontWeight: "700", color: Colors.neutre.encre, marginBottom: 6 },
+  bloc: { padding: Espacements.lg },
   espace: { marginTop: Espacements.md },
-  champ: {
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 13,
-    fontSize: 16,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.fond,
-  },
-  aide: {
-    fontSize: 12.5,
-    color: Colors.neutre.discret,
-    marginTop: 6,
-    lineHeight: 18,
-  },
+  label: { marginBottom: 9, color: Colors.neutre.encre },
   puces: { flexDirection: "row", flexWrap: "wrap", gap: Espacements.sm },
-  puce: {
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 9,
-    borderRadius: Rayons.sm,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    backgroundColor: Colors.neutre.fond,
-  },
-  puceActive: {
-    backgroundColor: Colors.prive.clair,
-    borderColor: Colors.prive.base,
-  },
-  puceTexte: { fontSize: 14, fontWeight: "600", color: Colors.neutre.texte },
-  puceTexteActif: { color: Colors.prive.fonce },
-  detectee: {
-    backgroundColor: Colors.prive.clair,
+  detectee: { backgroundColor: Colors.prive.clair },
+  detecteeRangee: { flexDirection: "row", alignItems: "center", gap: Espacements.md - 2 },
+  detecteeRond: {
+    width: 42,
+    height: 42,
     borderRadius: Rayons.md,
-    padding: Espacements.md,
-  },
-  detecteeNom: { fontSize: 16, fontWeight: "700", color: Colors.prive.fonce },
-  detecteeVille: { fontSize: 13, color: Colors.neutre.texte, marginTop: 3 },
-  liste: { marginTop: Espacements.sm, gap: Espacements.sm },
-  ligneEcole: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Espacements.sm,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
-    backgroundColor: Colors.neutre.fond,
-  },
-  verifier: {
-    marginTop: Espacements.md,
-    alignSelf: "flex-start",
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 10,
-    borderRadius: Rayons.sm,
-    borderWidth: 1,
-    borderColor: Colors.prive.base,
-    backgroundColor: Colors.prive.clair,
-  },
-  verifierTexte: { fontSize: 14, fontWeight: "700", color: Colors.prive.fonce },
-  ecoleNom: { fontSize: 15, fontWeight: "600", color: Colors.neutre.encre },
-  ecoleVille: { fontSize: 13, color: Colors.neutre.discret, marginTop: 2 },
-  erreur: {
-    marginTop: Espacements.md,
-    fontSize: 14,
-    color: Colors.etat.erreur,
-    lineHeight: 20,
-  },
-  bouton: {
-    marginTop: Espacements.lg,
-    backgroundColor: Colors.prive.fonce,
-    borderRadius: Rayons.md,
-    paddingVertical: 15,
+    backgroundColor: Colors.neutre.surface,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 50,
   },
-  boutonInactif: { opacity: 0.4 },
-  boutonTexte: { color: Colors.neutre.blanc, fontSize: 16, fontWeight: "700" },
-  lien: { marginTop: Espacements.md, alignItems: "center" },
-  lienTexte: { fontSize: 14, color: Colors.neutre.discret, fontWeight: "600" },
+  detecteeNom: { color: Colors.prive.fonce },
+  detecteeVille: { marginTop: 2 },
+  listeEcoles: { marginTop: Espacements.sm + 2, gap: 6 },
+  ligneEcole: { flexDirection: "row", alignItems: "center", gap: Espacements.sm },
+  ville: { color: Colors.neutre.discret },
+  aide: { marginTop: Espacements.md },
+  sortie: { alignItems: "center", paddingVertical: Espacements.sm },
 });

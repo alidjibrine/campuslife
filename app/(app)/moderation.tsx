@@ -1,16 +1,13 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
+import { Alert, StyleSheet, Text, View } from "react-native";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Puce from "@/components/Puce";
+import Bouton from "@/components/Bouton";
+import Badge from "@/components/Badge";
+import EtatVide from "@/components/EtatVide";
 import {
   libelleCible,
   listerSignalements,
@@ -20,17 +17,16 @@ import {
 } from "@/lib/moderation";
 import { depuis } from "@/lib/communaute";
 import { messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, Rayons, Typo } from "@/constants/theme";
 
 /**
- * Les signalements de mon etablissement.
+ * Les signalements de mon établissement.
  *
  * Deux gestes seulement : retirer le contenu, ou classer sans suite. Pas de
- * demi-mesure, pas de file d'attente compliquee. Ce qui compte a ce stade,
- * c'est qu'un signalement recoive une reponse le jour meme.
+ * demi-mesure, pas de file d'attente compliquée. Ce qui compte à ce stade,
+ * c'est qu'un signalement reçoive une réponse le jour même.
  */
 export default function Moderation() {
-  const router = useRouter();
   const [signalements, setSignalements] = useState<Signalement[]>([]);
   const [enAttenteSeulement, setEnAttenteSeulement] = useState(true);
   const [chargement, setChargement] = useState(true);
@@ -56,10 +52,10 @@ export default function Moderation() {
     }, [charger]),
   );
 
-  async function decider(s: Signalement, decision: Decision, supprimer: boolean) {
-    setEnCours(s.id);
+  async function decider(sig: Signalement, decision: Decision, supprimer: boolean) {
+    setEnCours(sig.id);
     try {
-      await traiter(s.id, decision, supprimer);
+      await traiter(sig.id, decision, supprimer);
       await charger();
     } catch (e) {
       setErreur(messageErreur(e));
@@ -68,7 +64,7 @@ export default function Moderation() {
     }
   }
 
-  function confirmerSuppression(s: Signalement) {
+  function confirmerSuppression(sig: Signalement) {
     Alert.alert(
       "Retirer ce contenu",
       "Le contenu et ses réponses disparaissent définitivement. L'auteur n'est pas prévenu par l'application.",
@@ -77,217 +73,134 @@ export default function Moderation() {
         {
           text: "Retirer",
           style: "destructive",
-          onPress: () => decider(s, "traite", true),
+          onPress: () => decider(sig, "traite", true),
         },
       ],
     );
   }
 
   const visibles = enAttenteSeulement
-    ? signalements.filter((s) => s.statut === "nouveau")
+    ? signalements.filter((x) => x.statut === "nouveau")
     : signalements;
-  const enAttente = signalements.filter((s) => s.statut === "nouveau").length;
+  const enAttente = signalements.filter((x) => x.statut === "nouveau").length;
 
   return (
-    <SafeAreaView style={s.page}>
-      <ScrollView
-        contentContainerStyle={s.contenu}
-        refreshControl={
-          <RefreshControl
-            refreshing={rafraichit}
-            onRefresh={() => {
-              setRafraichit(true);
-              charger();
-            }}
-            tintColor={Colors.social.base}
-          />
-        }
-      >
-        <Pressable onPress={() => router.back()} style={s.retour} hitSlop={10}>
-          <Text style={s.retourTexte}>Retour</Text>
-        </Pressable>
+    <Ecran
+      ton="social"
+      chargement={chargement}
+      erreur={erreur}
+      rafraichit={rafraichit}
+      surRafraichir={() => {
+        setRafraichit(true);
+        charger();
+      }}
+      entete={
+        <Entete
+          retour
+          ton="social"
+          surtitre="Réservé aux modérateurs"
+          titre="Modération"
+          sousTitre={
+            enAttente > 0
+              ? enAttente +
+                (enAttente > 1 ? " signalements en attente" : " signalement en attente")
+              : "Rien en attente"
+          }
+        />
+      }
+    >
+      <View style={s.filtres}>
+        <Puce
+          libelle="En attente"
+          ton="social"
+          actif={enAttenteSeulement}
+          onPress={() => setEnAttenteSeulement(true)}
+        />
+        <Puce
+          libelle="Tout"
+          ton="social"
+          actif={!enAttenteSeulement}
+          onPress={() => setEnAttenteSeulement(false)}
+        />
+      </View>
 
-        <Text style={s.titre}>Modération</Text>
-        <Text style={s.sousTitre}>
-          {enAttente > 0
-            ? enAttente + (enAttente > 1 ? " signalements en attente" : " signalement en attente")
-            : "Rien en attente"}
-        </Text>
+      {visibles.length === 0 ? (
+        <EtatVide
+          ton="social"
+          icone="shield-checkmark-outline"
+          titre={enAttenteSeulement ? "Aucun signalement en attente" : "Aucun signalement"}
+          texte="Le fil de ton établissement se tient. C'est bon signe."
+        />
+      ) : (
+        <View style={s.liste}>
+          {visibles.map((sig) => (
+            <Carte key={sig.id}>
+              <View style={s.haut}>
+                <Badge ton="erreur" variante="doux" valeur={sig.motifLibelle} />
+                <View style={s.flex} />
+                <Text style={Typo.petit}>{depuis(sig.creeLe)}</Text>
+              </View>
 
-        <View style={s.filtres}>
-          {[
-            { cle: true, libelle: "En attente" },
-            { cle: false, libelle: "Tout" },
-          ].map((f) => (
-            <Pressable
-              key={String(f.cle)}
-              style={[s.filtre, enAttenteSeulement === f.cle && s.filtreActif]}
-              onPress={() => setEnAttenteSeulement(f.cle)}
-            >
-              <Text
-                style={[
-                  s.filtreTexte,
-                  enAttenteSeulement === f.cle && s.filtreTexteActif,
-                ]}
-              >
-                {f.libelle}
+              <Text style={[Typo.petit, s.meta]}>
+                {libelleCible(sig.cibleType)}
+                {sig.auteurNom ? " de " + sig.auteurNom : ""}
+                {sig.statut !== "nouveau"
+                  ? " · " + (sig.statut === "traite" ? "retiré" : "classé sans suite")
+                  : ""}
               </Text>
-            </Pressable>
+
+              {!!sig.detail && (
+                <Text style={[Typo.petit, s.detail]}>« {sig.detail} »</Text>
+              )}
+
+              <View style={s.extrait}>
+                <Text style={[Typo.corps, s.extraitTexte]}>
+                  {sig.existe ? sig.contenu || "Contenu vide" : "Ce contenu n'existe plus."}
+                </Text>
+              </View>
+
+              {sig.statut === "nouveau" && (
+                <View style={s.actions}>
+                  {sig.existe && sig.cibleType !== "profile" && (
+                    <Bouton
+                      titre="Retirer le contenu"
+                      variante="danger"
+                      taille="sm"
+                      icone="trash-outline"
+                      onPress={() => confirmerSuppression(sig)}
+                      desactive={enCours === sig.id}
+                    />
+                  )}
+                  <Bouton
+                    titre="Classer sans suite"
+                    variante="discret"
+                    taille="sm"
+                    onPress={() => decider(sig, "rejete", false)}
+                    enCours={enCours === sig.id}
+                  />
+                </View>
+              )}
+            </Carte>
           ))}
         </View>
-
-        {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-
-        {chargement ? (
-          <ActivityIndicator style={s.attente} size="large" color={Colors.social.base} />
-        ) : visibles.length === 0 ? (
-          <View style={s.vide}>
-            <Text style={s.videTitre}>
-              {enAttenteSeulement ? "Aucun signalement en attente" : "Aucun signalement"}
-            </Text>
-            <Text style={s.videTexte}>
-              Le fil de ton établissement se tient. C&apos;est bon signe.
-            </Text>
-          </View>
-        ) : (
-          <View style={s.liste}>
-            {visibles.map((sig) => (
-              <View key={sig.id} style={s.carte}>
-                <View style={s.ligneHaut}>
-                  <Text style={s.motif}>{sig.motifLibelle}</Text>
-                  <Text style={s.quand}>{depuis(sig.creeLe)}</Text>
-                </View>
-
-                <Text style={s.meta}>
-                  {libelleCible(sig.cibleType)}
-                  {sig.auteurNom ? " de " + sig.auteurNom : ""}
-                  {sig.statut !== "nouveau"
-                    ? " · " + (sig.statut === "traite" ? "retiré" : "classé sans suite")
-                    : ""}
-                </Text>
-
-                {!!sig.detail && <Text style={s.detail}>« {sig.detail} »</Text>}
-
-                <View style={s.extrait}>
-                  <Text style={s.extraitTexte}>
-                    {sig.existe
-                      ? sig.contenu || "Contenu vide"
-                      : "Ce contenu n'existe plus."}
-                  </Text>
-                </View>
-
-                {sig.statut === "nouveau" && (
-                  <View style={s.actions}>
-                    {sig.existe && sig.cibleType !== "profile" && (
-                      <Pressable
-                        style={[s.bouton, s.boutonDanger]}
-                        onPress={() => confirmerSuppression(sig)}
-                        disabled={enCours === sig.id}
-                      >
-                        <Text style={[s.boutonTexte, s.boutonTexteDanger]}>
-                          Retirer le contenu
-                        </Text>
-                      </Pressable>
-                    )}
-                    <Pressable
-                      style={s.bouton}
-                      onPress={() => decider(sig, "rejete", false)}
-                      disabled={enCours === sig.id}
-                    >
-                      <Text style={s.boutonTexte}>
-                        {enCours === sig.id ? "..." : "Classer sans suite"}
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+      )}
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl },
-  retour: { marginBottom: Espacements.md },
-  retourTexte: { fontSize: 14, fontWeight: "600", color: Colors.social.fonce },
-  titre: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-    color: Colors.neutre.encre,
-  },
-  sousTitre: {
-    fontSize: 13.5,
-    color: Colors.social.fonce,
-    marginTop: 2,
-    fontWeight: "600",
-  },
-  filtres: { flexDirection: "row", gap: Espacements.sm, marginTop: Espacements.lg },
-  filtre: {
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 8,
-    borderRadius: Rayons.sm,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    backgroundColor: Colors.neutre.surface,
-  },
-  filtreActif: { backgroundColor: Colors.social.clair, borderColor: Colors.social.base },
-  filtreTexte: { fontSize: 13, fontWeight: "600", color: Colors.neutre.discret },
-  filtreTexteActif: { color: Colors.social.fonce },
-  erreur: { marginTop: Espacements.md, fontSize: 14, color: Colors.etat.erreur },
-  attente: { marginTop: Espacements.xl },
-  vide: {
-    marginTop: Espacements.lg,
-    padding: Espacements.lg,
-    borderRadius: Rayons.lg,
-    backgroundColor: Colors.social.clair,
-  },
-  videTitre: { fontSize: 15, fontWeight: "700", color: Colors.social.fonce },
-  videTexte: {
-    fontSize: 14,
-    color: Colors.neutre.texte,
-    marginTop: 4,
-    lineHeight: 20,
-  },
-  liste: { marginTop: Espacements.lg, gap: Espacements.md },
-  carte: {
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
-  },
-  ligneHaut: { flexDirection: "row", alignItems: "center", gap: Espacements.sm },
-  motif: { flex: 1, fontSize: 15, fontWeight: "800", color: Colors.etat.erreur },
-  quand: { fontSize: 12, color: Colors.neutre.discret },
-  meta: { fontSize: 13, color: Colors.neutre.discret, marginTop: 4 },
-  detail: {
-    fontSize: 13.5,
-    color: Colors.neutre.texte,
-    marginTop: 8,
-    fontStyle: "italic",
-  },
+  flex: { flex: 1 },
+  filtres: { flexDirection: "row", gap: Espacements.sm },
+  liste: { gap: Espacements.sm + 4 },
+  haut: { flexDirection: "row", alignItems: "center", gap: Espacements.sm },
+  meta: { marginTop: Espacements.sm },
+  detail: { marginTop: 6, fontStyle: "italic", color: Colors.neutre.texte },
   extrait: {
-    marginTop: Espacements.sm,
-    padding: Espacements.md,
-    borderRadius: Rayons.sm,
-    backgroundColor: Colors.neutre.fond,
+    marginTop: Espacements.sm + 4,
+    padding: Espacements.md - 2,
+    borderRadius: Rayons.md,
+    backgroundColor: Colors.neutre.creux,
   },
-  extraitTexte: { fontSize: 14.5, lineHeight: 21, color: Colors.neutre.encre },
-  actions: { flexDirection: "row", gap: Espacements.sm, marginTop: Espacements.md },
-  bouton: {
-    flex: 1,
-    paddingVertical: 11,
-    borderRadius: Rayons.sm,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    alignItems: "center",
-  },
-  boutonDanger: { borderColor: Colors.etat.erreur, backgroundColor: Colors.etat.erreur },
-  boutonTexte: { fontSize: 13.5, fontWeight: "700", color: Colors.neutre.encre },
-  boutonTexteDanger: { color: Colors.neutre.blanc },
+  extraitTexte: { color: Colors.neutre.encre },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: Espacements.sm, marginTop: Espacements.md },
 });

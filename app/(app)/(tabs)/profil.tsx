@@ -1,28 +1,22 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Section from "@/components/Section";
+import Ligne from "@/components/Ligne";
+import Bouton from "@/components/Bouton";
+import Avatar from "@/components/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMonProfil, messageErreur, type Profil as TypeProfil } from "@/lib/api";
-import {
-  formaterOctets,
-  stockage,
-  supprimerMonCompte,
-  type Stockage,
-} from "@/lib/compte";
+import { formaterOctets, stockage, supprimerMonCompte, type Stockage } from "@/lib/compte";
 import { suisJeModerateur } from "@/lib/moderation";
 import { LISTE_DOCUMENTS } from "@/constants/textes-legaux";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, Rayons, Typo } from "@/constants/theme";
 
-/** Mon profil : qui je suis, mon ecole, mes textes, et les deux sorties. */
+/** Mon profil : qui je suis, mon école, mes textes, et les deux sorties. */
 export default function Profil() {
   const { deconnexion } = useAuth();
   const router = useRouter();
@@ -33,26 +27,27 @@ export default function Profil() {
   const [suppression, setSuppression] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      let monte = true;
-      Promise.all([
+  const charger = useCallback(async () => {
+    try {
+      const [p, e, m] = await Promise.all([
         getMonProfil(),
         stockage().catch(() => null),
         suisJeModerateur().catch(() => false),
-      ])
-        .then(([p, e, m]) => {
-          if (!monte) return;
-          setProfil(p);
-          setEspace(e);
-          setModerateur(m);
-        })
-        .catch(() => monte && setProfil(null))
-        .finally(() => monte && setChargement(false));
-      return () => {
-        monte = false;
-      };
-    }, []),
+      ]);
+      setProfil(p);
+      setEspace(e);
+      setModerateur(m);
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setChargement(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      charger();
+    }, [charger]),
   );
 
   function confirmerDeconnexion() {
@@ -63,8 +58,8 @@ export default function Profil() {
   }
 
   /**
-   * Deux confirmations pour une action irreversible. La premiere explique ce
-   * qui disparait, la seconde demande de le confirmer une bonne fois.
+   * Deux confirmations pour une action irréversible. La première explique ce
+   * qui disparaît, la seconde demande de le confirmer une bonne fois.
    */
   function confirmerSuppression() {
     Alert.alert(
@@ -78,7 +73,11 @@ export default function Profil() {
           onPress: () =>
             Alert.alert("Confirmer", "Dernière vérification. On y va ?", [
               { text: "Non", style: "cancel" },
-              { text: "Supprimer définitivement", style: "destructive", onPress: supprimer },
+              {
+                text: "Supprimer définitivement",
+                style: "destructive",
+                onPress: supprimer,
+              },
             ]),
         },
       ],
@@ -96,207 +95,185 @@ export default function Profil() {
     }
   }
 
-  if (chargement) {
-    return (
-      <View style={s.attente}>
-        <ActivityIndicator size="large" color={Colors.prive.base} />
-      </View>
-    );
-  }
-
-  const initiales = ((profil?.prenom?.[0] ?? "") + (profil?.nom?.[0] ?? ""))
-    .toUpperCase()
-    .trim();
+  const nomComplet = [profil?.prenom, profil?.nom].filter(Boolean).join(" ");
+  const pleinePart = espace ? Math.max(espace.pourcentage, 2) : 0;
 
   return (
-    <SafeAreaView style={s.page}>
-      <ScrollView contentContainerStyle={s.contenu}>
-        <View style={s.entete}>
-          <View style={s.pastille}>
-            <Text style={s.initiales}>{initiales || "?"}</Text>
-          </View>
+    <Ecran chargement={chargement} erreur={erreur} entete={<Entete titre="Profil" />}>
+      <Carte>
+        <View style={s.identite}>
+          <Avatar nom={nomComplet || "?"} taille={62} ton="prive" />
           <View style={s.flex}>
-            <Text style={s.nom}>
-              {profil?.prenom ?? ""} {profil?.nom ?? ""}
+            <Text style={Typo.sousTitre} numberOfLines={1}>
+              {nomComplet || "Profil incomplet"}
             </Text>
-            <Text style={s.email}>{profil?.email ?? ""}</Text>
-          </View>
-        </View>
-
-        <View style={s.bloc}>
-          <View style={s.champ}>
-            <Text style={s.champLabel}>Établissement</Text>
-            <Text style={s.champValeur}>
-              {profil?.ecole?.nom ?? "Non rattaché"}
+            <Text style={[Typo.petit, s.mail]} numberOfLines={1}>
+              {profil?.email ?? ""}
             </Text>
-          </View>
-          <View style={s.champ}>
-            <Text style={s.champLabel}>Année</Text>
-            <Text style={s.champValeur}>{profil?.anneeEtude ?? "Non renseignée"}</Text>
-          </View>
-          <View style={s.champ}>
-            <Text style={s.champLabel}>Filière</Text>
-            <Text style={s.champValeur}>{profil?.filiere ?? "Non renseignée"}</Text>
-          </View>
-          <View style={[s.champ, s.dernier]}>
-            <Text style={s.champLabel}>Stockage</Text>
-            {espace ? (
-              <>
-                <Text style={s.champValeur}>
-                  {formaterOctets(espace.utilise)} sur {formaterOctets(espace.quota)}
-                </Text>
-                <View style={s.jauge}>
-                  <View
-                  style={[s.jaugeRemplie, { width: `${espace.pourcentage}%` }]}
-                />
-                </View>
-              </>
-            ) : (
-              <Text style={s.champValeur}>Indisponible</Text>
+            {moderateur && (
+              <View style={s.roleRang}>
+                <Ionicons name="shield-checkmark" size={13} color={Colors.accent.fonce} />
+                <Text style={s.roleTexte}>Modérateur</Text>
+              </View>
             )}
           </View>
         </View>
 
-        <Pressable
-          style={s.action}
-          onPress={() => router.push("/(app)/onboarding")}
-        >
-          <Text style={s.actionTexte}>Modifier mes informations</Text>
-        </Pressable>
-
-        {moderateur && (
-          <Pressable
-            style={s.action}
-            onPress={() => router.push("/moderation" as Href)}
-          >
-            <Text style={s.actionTexte}>Modération</Text>
-          </Pressable>
-        )}
-
-        <Text style={s.rubrique}>Le cadre</Text>
-        <View style={s.bloc}>
-          {LISTE_DOCUMENTS.map((d, i) => (
-            <Pressable
-              key={d.cle}
-              style={[s.champ, i === LISTE_DOCUMENTS.length - 1 && s.dernier]}
-              onPress={() => router.push(("/document/" + d.cle) as Href)}
-            >
-              <Text style={s.lien}>{d.titre}</Text>
-            </Pressable>
+        <View style={s.faits}>
+          {[
+            { label: "Établissement", valeur: profil?.ecole?.nom ?? "Non rattaché" },
+            { label: "Année", valeur: profil?.anneeEtude ?? "Non renseignée" },
+            { label: "Filière", valeur: profil?.filiere ?? "Non renseignée" },
+          ].map((f, i) => (
+            <View key={f.label} style={[s.fait, i < 2 && s.faitTrait]}>
+              <Text style={Typo.etiquette}>{f.label}</Text>
+              <Text style={[Typo.corps, s.faitValeur]} numberOfLines={2}>
+                {f.valeur}
+              </Text>
+            </View>
           ))}
         </View>
+      </Carte>
 
-        {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
+      <Bouton
+        titre="Modifier mes informations"
+        variante="contour"
+        icone="create-outline"
+        pleineLargeur
+        onPress={() => router.push("/(app)/onboarding")}
+      />
 
-        <Pressable style={[s.action, s.sortie]} onPress={confirmerDeconnexion}>
-          <Text style={[s.actionTexte, s.sortieTexte]}>Me déconnecter</Text>
-        </Pressable>
+      <Section titre="Stockage">
+        <Carte>
+          <View style={s.stockageHaut}>
+            <Text style={Typo.corpsFort}>
+              {espace ? formaterOctets(espace.utilise) : "—"}
+            </Text>
+            <Text style={Typo.petit}>
+              sur {espace ? formaterOctets(espace.quota) : "—"}
+            </Text>
+          </View>
+          <View style={s.jauge}>
+            <View
+              style={[
+                s.jaugeRemplie,
+                {
+                  width: `${pleinePart}%`,
+                  backgroundColor:
+                    (espace?.pourcentage ?? 0) > 85
+                      ? Colors.etat.alerte
+                      : Colors.prive.base,
+                },
+              ]}
+            />
+          </View>
+        </Carte>
+      </Section>
 
-        <Pressable
-          style={[s.action, s.danger]}
+      {moderateur && (
+        <Section titre="Modération">
+          <Carte>
+            <Ligne
+              titre="Signalements"
+              detail="Les contenus signalés dans ton établissement"
+              chevron
+              dernier
+              gauche={
+                <View style={[s.rond, { backgroundColor: Colors.accent.clair }]}>
+                  <Ionicons name="flag-outline" size={18} color={Colors.accent.fonce} />
+                </View>
+              }
+              onPress={() => router.push("/moderation" as Href)}
+            />
+          </Carte>
+        </Section>
+      )}
+
+      <Section titre="Le cadre">
+        <Carte>
+          {LISTE_DOCUMENTS.map((d, i) => (
+            <Ligne
+              key={d.cle}
+              titre={d.titre}
+              chevron
+              dernier={i === LISTE_DOCUMENTS.length - 1}
+              gauche={
+                <View style={[s.rond, { backgroundColor: Colors.prive.clair }]}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={18}
+                    color={Colors.prive.fonce}
+                  />
+                </View>
+              }
+              onPress={() => router.push(("/document/" + d.cle) as Href)}
+            />
+          ))}
+        </Carte>
+      </Section>
+
+      <View style={s.sorties}>
+        <Bouton
+          titre="Me déconnecter"
+          variante="contour"
+          ton="neutre"
+          icone="log-out-outline"
+          pleineLargeur
+          onPress={confirmerDeconnexion}
+        />
+        <Bouton
+          titre="Supprimer mon compte"
+          variante="danger"
+          pleineLargeur
+          enCours={suppression}
           onPress={confirmerSuppression}
-          disabled={suppression}
-        >
-          <Text style={[s.actionTexte, s.dangerTexte]}>
-            {suppression ? "Suppression en cours..." : "Supprimer mon compte"}
-          </Text>
-        </Pressable>
+        />
+      </View>
 
-        <Text style={s.version}>CampusLife, version de développement</Text>
-      </ScrollView>
-    </SafeAreaView>
+      <Text style={[Typo.petit, s.version]}>CampusLife · version de développement</Text>
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  attente: {
-    flex: 1,
-    backgroundColor: Colors.neutre.fond,
-    justifyContent: "center",
-    alignItems: "center",
+  identite: { flexDirection: "row", alignItems: "center", gap: Espacements.md },
+  mail: { marginTop: 2 },
+  roleRang: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 },
+  roleTexte: {
+    fontFamily: Typo.petitFort.fontFamily,
+    fontSize: 12,
+    color: Colors.accent.fonce,
   },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl },
-  entete: { flexDirection: "row", alignItems: "center", gap: Espacements.md },
-  pastille: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: Colors.prive.fonce,
-    alignItems: "center",
-    justifyContent: "center",
+  faits: {
+    marginTop: Espacements.md,
+    paddingTop: Espacements.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutre.traitDoux,
   },
-  initiales: { fontSize: 20, fontWeight: "800", color: Colors.neutre.blanc },
-  nom: {
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: -0.4,
-    color: Colors.neutre.encre,
+  fait: { paddingVertical: Espacements.sm + 2 },
+  faitTrait: { borderBottomWidth: 1, borderBottomColor: Colors.neutre.traitDoux },
+  faitValeur: { marginTop: 3, color: Colors.neutre.encre },
+  stockageHaut: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
   },
-  email: { fontSize: 13.5, color: Colors.neutre.discret, marginTop: 2 },
-  bloc: {
-    marginTop: Espacements.lg,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.lg,
-    paddingHorizontal: Espacements.lg,
-  },
-  champ: {
-    paddingVertical: Espacements.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutre.trait,
-  },
-  dernier: { borderBottomWidth: 0 },
-  champLabel: {
-    fontSize: 11,
-    letterSpacing: 1.2,
-    fontWeight: "700",
-    color: Colors.neutre.discret,
-    textTransform: "uppercase",
-  },
-  champValeur: { fontSize: 15.5, color: Colors.neutre.encre, marginTop: 4 },
   jauge: {
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: Colors.neutre.trait,
-    marginTop: 8,
+    height: 6,
+    borderRadius: Rayons.rond,
+    backgroundColor: Colors.neutre.creux,
+    marginTop: Espacements.sm + 2,
     overflow: "hidden",
   },
-  jaugeRemplie: { height: 5, backgroundColor: Colors.prive.base },
-  rubrique: {
-    marginTop: Espacements.xl,
-    fontSize: 11,
-    letterSpacing: 1.2,
-    fontWeight: "700",
-    color: Colors.neutre.discret,
-    textTransform: "uppercase",
-  },
-  lien: { fontSize: 15.5, color: Colors.prive.fonce, fontWeight: "600" },
-  erreur: {
-    marginTop: Espacements.md,
-    fontSize: 14,
-    color: Colors.etat.erreur,
-  },
-  action: {
-    marginTop: Espacements.md,
-    paddingVertical: 14,
+  jaugeRemplie: { height: 6, borderRadius: Rayons.rond },
+  rond: {
+    width: 38,
+    height: 38,
     borderRadius: Rayons.md,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    backgroundColor: Colors.neutre.surface,
     alignItems: "center",
+    justifyContent: "center",
   },
-  actionTexte: { fontSize: 15, fontWeight: "600", color: Colors.neutre.encre },
-  sortie: { borderColor: Colors.etat.erreur },
-  sortieTexte: { color: Colors.etat.erreur },
-  danger: { borderColor: Colors.etat.erreur, backgroundColor: Colors.etat.erreur },
-  dangerTexte: { color: Colors.neutre.blanc },
-  version: {
-    marginTop: Espacements.xl,
-    fontSize: 12,
-    color: Colors.neutre.discret,
-    textAlign: "center",
-  },
+  sorties: { gap: Espacements.sm + 4 },
+  version: { textAlign: "center" },
 });

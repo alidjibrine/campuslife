@@ -1,20 +1,15 @@
 import { useCallback, useState } from "react";
-import { Link, useFocusEffect, type Href } from "expo-router";
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect, useRouter, type Href } from "expo-router";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Bouton from "@/components/Bouton";
+import Champ from "@/components/Champ";
+import Puce from "@/components/Puce";
+import Avatar from "@/components/Avatar";
+import EtatVide from "@/components/EtatVide";
 import {
   basculerJaime,
   CATEGORIES,
@@ -26,19 +21,19 @@ import {
   supprimerPublication,
   type Publication,
 } from "@/lib/communaute";
-import { getMonProfil } from "@/lib/api";
-import { messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { getMonProfil, messageErreur } from "@/lib/api";
+import { Colors, Espacements, Polices, Rayons, Typo } from "@/constants/theme";
 
 /**
- * Le fil de mon etablissement.
+ * Le fil de mon établissement.
  *
- * Aucun filtre n'est applique ici sur l'ecole : c'est la base qui ne renvoie
- * que les publications de mon etablissement. Si un jour ce fil affiche une
- * publication d'une autre ecole, c'est une regle d'acces qui a saute, pas un
+ * Aucun filtre n'est appliqué ici sur l'école : c'est la base qui ne renvoie
+ * que les publications de mon établissement. Si un jour ce fil affiche une
+ * publication d'une autre école, c'est une règle d'accès qui a sauté, pas un
  * bug d'affichage.
  */
 export default function Communaute() {
+  const router = useRouter();
   const [publications, setPublications] = useState<Publication[]>([]);
   const [ecole, setEcole] = useState<string | null>(null);
   const [chargement, setChargement] = useState(true);
@@ -119,322 +114,246 @@ export default function Communaute() {
       ]);
       return;
     }
-    Alert.alert(
-      "Signaler cette publication",
-      "Pourquoi ce contenu pose problème ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        ...MOTIFS_SIGNALEMENT.map((m) => ({
-          text: m.libelle,
-          onPress: async () => {
-            try {
-              await signaler("post", p.id, m.cle);
-              Alert.alert("Merci", "Le signalement a bien été enregistré.");
-            } catch (e) {
-              Alert.alert("Signalement", messageErreur(e));
-            }
-          },
-        })),
-      ],
-    );
+    Alert.alert("Signaler cette publication", "Pourquoi ce contenu pose problème ?", [
+      { text: "Annuler", style: "cancel" },
+      ...MOTIFS_SIGNALEMENT.map((m) => ({
+        text: m.libelle,
+        onPress: async () => {
+          try {
+            await signaler("post", p.id, m.cle);
+            Alert.alert("Merci", "Le signalement a bien été enregistré.");
+          } catch (e) {
+            Alert.alert("Signalement", messageErreur(e));
+          }
+        },
+      })),
+    ]);
   }
 
   return (
-    <SafeAreaView style={s.page}>
-      <KeyboardAvoidingView
-        style={s.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={s.contenu}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={
-            <RefreshControl
-              refreshing={rafraichit}
-              onRefresh={() => {
-                setRafraichit(true);
-                charger();
+    <Ecran
+      ton="social"
+      clavier
+      chargement={chargement}
+      erreur={erreur}
+      rafraichit={rafraichit}
+      surRafraichir={() => {
+        setRafraichit(true);
+        charger();
+      }}
+      entete={
+        <Entete
+          ton="social"
+          surtitre="Communauté fermée"
+          titre="Le fil"
+          sousTitre={ecole ?? "Mon établissement"}
+          action={
+            <Pressable
+              onPress={() => router.push("/membres" as Href)}
+              hitSlop={8}
+              accessibilityLabel="Annuaire des membres"
+              style={s.boutonRond}
+            >
+              <Ionicons name="people-outline" size={19} color={Colors.social.fonce} />
+            </Pressable>
+          }
+        />
+      }
+    >
+      {/* Le composeur. Fermé, c'est une invite d'une ligne ; ouvert, il prend
+          la place qu'il faut. Un champ de saisie toujours déplié mange l'écran
+          sur un téléphone. */}
+      {composerOuvert ? (
+        <Carte>
+          <View style={s.puces}>
+            {CATEGORIES.map((c) => (
+              <Puce
+                key={c}
+                libelle={c}
+                ton="social"
+                actif={categorie === c}
+                onPress={() => setCategorie(c)}
+                desactive={enCours}
+              />
+            ))}
+          </View>
+          <Champ
+            ton="social"
+            conteneur={s.champ}
+            value={contenu}
+            onChangeText={setContenu}
+            placeholder="Poser une question, partager un bon plan..."
+            multiline
+            editable={!enCours}
+            maxLength={2000}
+          />
+          <View style={s.actionsComposeur}>
+            <Bouton
+              titre="Annuler"
+              variante="discret"
+              taille="sm"
+              onPress={() => {
+                setComposerOuvert(false);
+                setContenu("");
               }}
-              tintColor={Colors.social.base}
+              desactive={enCours}
+            />
+            <Bouton
+              titre="Publier"
+              ton="social"
+              taille="sm"
+              icone="send"
+              onPress={envoyer}
+              enCours={enCours}
+              desactive={contenu.trim().length < 3}
+            />
+          </View>
+        </Carte>
+      ) : (
+        <Carte onPress={() => setComposerOuvert(true)}>
+          <View style={s.invite}>
+            <View style={s.inviteRond}>
+              <Ionicons name="create-outline" size={18} color={Colors.social.fonce} />
+            </View>
+            <Text style={[Typo.corps, s.inviteTexte]}>Ce que tu veux dire à ta promo</Text>
+          </View>
+        </Carte>
+      )}
+
+      {publications.length === 0 ? (
+        <EtatVide
+          ton="social"
+          icone="chatbubbles-outline"
+          titre="Le fil est vide"
+          texte="Personne n'a encore publié dans ton école. Lance la première discussion, c'est toujours quelqu'un qui commence."
+          action={
+            <Bouton
+              titre="Écrire quelque chose"
+              ton="social"
+              onPress={() => setComposerOuvert(true)}
             />
           }
-        >
-          <View style={s.entete}>
-            <View style={s.flex}>
-              <Text style={s.titre}>Communauté</Text>
-              <Text style={s.sousTitre}>{ecole ?? "Mon établissement"}</Text>
-            </View>
-            <Link href={"/membres" as Href} asChild>
-              <Pressable style={s.boutonMembres}>
-                <Ionicons name="people-outline" size={18} color={Colors.social.fonce} />
-              </Pressable>
-            </Link>
-          </View>
-
-          {!composerOuvert && (
-            <Pressable style={s.invite} onPress={() => setComposerOuvert(true)}>
-              <Text style={s.inviteTexte}>Poser une question, partager un bon plan...</Text>
-            </Pressable>
-          )}
-
-          {composerOuvert && (
-            <View style={s.composer}>
-              <View style={s.puces}>
-                {CATEGORIES.map((c) => {
-                  const actif = categorie === c;
-                  return (
-                    <Pressable
-                      key={c}
-                      onPress={() => setCategorie(c)}
-                      disabled={enCours}
-                      style={[s.puce, actif && s.puceActive]}
-                    >
-                      <Text style={[s.puceTexte, actif && s.puceTexteActif]}>{c}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <TextInput
-                style={s.champ}
-                value={contenu}
-                onChangeText={setContenu}
-                placeholder="Ce que tu veux dire à ta promo"
-                placeholderTextColor={Colors.neutre.discret}
-                multiline
-                editable={!enCours}
-              />
-              <View style={s.actions}>
+        />
+      ) : (
+        <View style={s.fil}>
+          {publications.map((p) => (
+            <Carte key={p.id} onPress={() => router.push(("/sujet/" + p.id) as Href)}>
+              <View style={s.enteteSujet}>
+                <Avatar nom={p.auteurNom} taille={38} />
+                <View style={s.flex}>
+                  <Text style={Typo.corpsFort} numberOfLines={1}>
+                    {p.auteurNom || "Étudiant"}
+                  </Text>
+                  <Text style={Typo.petit}>{depuis(p.creeLe)}</Text>
+                </View>
+                {!!p.categorie && (
+                  <View style={s.categorie}>
+                    <Text style={s.categorieTexte}>{p.categorie}</Text>
+                  </View>
+                )}
                 <Pressable
-                  style={s.annuler}
-                  onPress={() => {
-                    setComposerOuvert(false);
-                    setContenu("");
-                  }}
-                  disabled={enCours}
+                  onPress={() => menu(p)}
+                  hitSlop={10}
+                  accessibilityLabel="Options de la publication"
                 >
-                  <Text style={s.annulerTexte}>Annuler</Text>
+                  <Ionicons
+                    name="ellipsis-horizontal"
+                    size={18}
+                    color={Colors.neutre.fantome}
+                  />
                 </Pressable>
+              </View>
+
+              <Text style={[Typo.corps, s.corps]}>{p.contenu}</Text>
+
+              <View style={s.pied}>
                 <Pressable
-                  style={[s.valider, contenu.trim().length < 3 && s.inactif]}
-                  onPress={envoyer}
-                  disabled={contenu.trim().length < 3 || enCours}
+                  onPress={() => aimer(p)}
+                  hitSlop={8}
+                  style={s.action}
+                  accessibilityLabel={p.aimeParMoi ? "Retirer mon j'aime" : "J'aime"}
                 >
-                  {enCours ? (
-                    <ActivityIndicator color={Colors.neutre.blanc} />
-                  ) : (
-                    <Text style={s.validerTexte}>Publier</Text>
+                  <Ionicons
+                    name={p.aimeParMoi ? "heart" : "heart-outline"}
+                    size={18}
+                    color={p.aimeParMoi ? Colors.etat.erreur : Colors.neutre.discret}
+                  />
+                  {p.jaime > 0 && (
+                    <Text style={[s.compte, p.aimeParMoi && s.compteActif]}>{p.jaime}</Text>
                   )}
                 </Pressable>
-              </View>
-            </View>
-          )}
-
-          {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-
-          {chargement ? (
-            <ActivityIndicator style={s.attente} size="large" color={Colors.social.base} />
-          ) : publications.length === 0 ? (
-            <View style={s.vide}>
-              <Text style={s.videTitre}>Le fil est vide</Text>
-              <Text style={s.videTexte}>
-                Personne n&apos;a encore publié dans ton école. Lance la première
-                discussion, c&apos;est toujours quelqu&apos;un qui commence.
-              </Text>
-            </View>
-          ) : (
-            <View style={s.liste}>
-              {publications.map((p) => (
-                <View key={p.id} style={s.carte}>
-                  <View style={s.carteEntete}>
-                    <View style={s.avatar}>
-                      <Text style={s.avatarTexte}>
-                        {p.auteurNom.slice(0, 1).toUpperCase()}
-                      </Text>
-                    </View>
-                    <View style={s.flex}>
-                      <Text style={s.auteur}>{p.auteurNom}</Text>
-                      <Text style={s.date}>
-                        {depuis(p.creeLe)}
-                        {p.categorie ? " · " + p.categorie : ""}
-                      </Text>
-                    </View>
-                    <Pressable onPress={() => menu(p)} hitSlop={10}>
-                      <Ionicons
-                        name="ellipsis-horizontal"
-                        size={18}
-                        color={Colors.neutre.discret}
-                      />
-                    </Pressable>
-                  </View>
-
-                  <Text style={s.texte}>{p.contenu}</Text>
-
-                  <View style={s.pied}>
-                    <Pressable style={s.action} onPress={() => aimer(p)} hitSlop={8}>
-                      <Ionicons
-                        name={p.aimeParMoi ? "heart" : "heart-outline"}
-                        size={17}
-                        color={p.aimeParMoi ? Colors.etat.erreur : Colors.neutre.discret}
-                      />
-                      <Text style={[s.actionTexte, p.aimeParMoi && s.actionActive]}>
-                        {p.jaime}
-                      </Text>
-                    </Pressable>
-                    <Link
-                      href={("/sujet/" + p.id) as Href}
-                      asChild
-                    >
-                      <Pressable style={s.action} hitSlop={8}>
-                        <Ionicons
-                          name="chatbubble-outline"
-                          size={16}
-                          color={Colors.neutre.discret}
-                        />
-                        <Text style={s.actionTexte}>
-                          {p.commentaires === 0
-                            ? "Répondre"
-                            : p.commentaires +
-                              (p.commentaires > 1 ? " réponses" : " réponse")}
-                        </Text>
-                      </Pressable>
-                    </Link>
-                  </View>
+                <View style={s.action}>
+                  <Ionicons
+                    name="chatbubble-outline"
+                    size={17}
+                    color={Colors.neutre.discret}
+                  />
+                  <Text style={s.compte}>
+                    {p.commentaires > 0
+                      ? p.commentaires + (p.commentaires > 1 ? " réponses" : " réponse")
+                      : "Répondre"}
+                  </Text>
                 </View>
-              ))}
-            </View>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+              </View>
+            </Carte>
+          ))}
+        </View>
+      )}
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl },
-  entete: { flexDirection: "row", alignItems: "center", gap: Espacements.md },
-  titre: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-    color: Colors.neutre.encre,
-  },
-  sousTitre: { fontSize: 13.5, color: Colors.social.fonce, marginTop: 2, fontWeight: "600" },
-  boutonMembres: {
-    width: 40,
-    height: 40,
-    borderRadius: Rayons.md,
+  boutonRond: {
+    width: 38,
+    height: 38,
+    borderRadius: Rayons.rond,
     backgroundColor: Colors.social.clair,
     alignItems: "center",
     justifyContent: "center",
   },
-  invite: {
-    marginTop: Espacements.lg,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    backgroundColor: Colors.neutre.surface,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 14,
+  puces: { flexDirection: "row", flexWrap: "wrap", gap: Espacements.sm },
+  champ: { marginTop: Espacements.md },
+  actionsComposeur: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: Espacements.sm,
+    marginTop: Espacements.md,
   },
-  inviteTexte: { fontSize: 14.5, color: Colors.neutre.discret },
-  composer: {
-    marginTop: Espacements.lg,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.social.base,
-    borderRadius: Rayons.lg,
-    padding: Espacements.md,
-  },
-  puces: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: Espacements.sm },
-  puce: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: Rayons.sm,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-  },
-  puceActive: { backgroundColor: Colors.social.clair, borderColor: Colors.social.base },
-  puceTexte: { fontSize: 13, fontWeight: "600", color: Colors.neutre.texte },
-  puceTexteActif: { color: Colors.social.fonce },
-  champ: {
-    minHeight: 90,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
-    fontSize: 15,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.fond,
-    textAlignVertical: "top",
-  },
-  actions: { flexDirection: "row", gap: Espacements.sm, marginTop: Espacements.md },
-  annuler: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: Rayons.md,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    alignItems: "center",
-  },
-  annulerTexte: { fontSize: 15, fontWeight: "600", color: Colors.neutre.texte },
-  valider: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: Rayons.md,
-    backgroundColor: Colors.social.fonce,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-  },
-  validerTexte: { fontSize: 15, fontWeight: "700", color: Colors.neutre.blanc },
-  inactif: { opacity: 0.4 },
-  erreur: { marginTop: Espacements.md, fontSize: 14, color: Colors.etat.erreur },
-  attente: { marginTop: Espacements.xl },
-  vide: {
-    marginTop: Espacements.lg,
-    padding: Espacements.lg,
-    borderRadius: Rayons.lg,
-    backgroundColor: Colors.social.clair,
-  },
-  videTitre: { fontSize: 15, fontWeight: "700", color: Colors.social.fonce },
-  videTexte: { fontSize: 14, color: Colors.neutre.texte, marginTop: 4, lineHeight: 20 },
-  liste: { marginTop: Espacements.lg, gap: Espacements.sm },
-  carte: {
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.lg,
-    padding: Espacements.md,
-  },
-  carteEntete: { flexDirection: "row", alignItems: "center", gap: Espacements.sm },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  invite: { flexDirection: "row", alignItems: "center", gap: Espacements.md - 2 },
+  inviteRond: {
+    width: 38,
+    height: 38,
+    borderRadius: Rayons.rond,
     backgroundColor: Colors.social.clair,
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarTexte: { fontSize: 14, fontWeight: "800", color: Colors.social.fonce },
-  auteur: { fontSize: 14.5, fontWeight: "700", color: Colors.neutre.encre },
-  date: { fontSize: 12, color: Colors.neutre.discret, marginTop: 1 },
-  texte: {
-    fontSize: 15,
-    color: Colors.neutre.encre,
-    lineHeight: 22,
-    marginTop: Espacements.sm,
+  inviteTexte: { flex: 1, color: Colors.neutre.discret },
+  fil: { gap: Espacements.sm + 4 },
+  enteteSujet: { flexDirection: "row", alignItems: "center", gap: Espacements.sm + 2 },
+  categorie: {
+    backgroundColor: Colors.social.clair,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: Rayons.rond,
   },
+  categorieTexte: {
+    fontFamily: Polices.corpsFort,
+    fontSize: 11,
+    color: Colors.social.fonce,
+  },
+  corps: { marginTop: Espacements.sm + 4, color: Colors.neutre.encre },
   pied: {
     flexDirection: "row",
     gap: Espacements.lg,
     marginTop: Espacements.md,
-    paddingTop: Espacements.sm,
+    paddingTop: Espacements.sm + 4,
     borderTopWidth: 1,
-    borderTopColor: Colors.neutre.trait,
+    borderTopColor: Colors.neutre.traitDoux,
   },
   action: { flexDirection: "row", alignItems: "center", gap: 6 },
-  actionTexte: { fontSize: 13, color: Colors.neutre.discret, fontWeight: "600" },
-  actionActive: { color: Colors.etat.erreur },
+  compte: { fontFamily: Polices.corpsFort, fontSize: 13, color: Colors.neutre.discret },
+  compteActif: { color: Colors.etat.erreur },
 });

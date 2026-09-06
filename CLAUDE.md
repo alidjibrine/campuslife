@@ -53,3 +53,17 @@ Inclure systematiquement :
 ## Taches
 
 Tenir la liste de taches a jour au fur et a mesure. Ali aime suivre la progression.
+
+## Interface
+
+Le systeme de design est dans `docs/05-design.md` et `constants/theme.ts`.
+Il se lit avant d'ecrire un ecran, pas apres.
+
+- Aucun code hexadecimal hors de `constants/theme.ts`. Aucune taille de texte
+  hors de `Typo`. Aucun espacement hors de `Espacements`.
+- Un ecran n'invente pas un bouton, une carte ou un etat vide : il utilise
+  les composants de `components/`. S'il en manque un, on l'ajoute la, pas
+  dans l'ecran.
+- Un seul bouton plein par ecran. Un etat vide a toujours une porte de sortie.
+  Une erreur s'affiche toujours, jamais de `catch` vide.
+- Les textes affiches sont accentues. Sans exception.

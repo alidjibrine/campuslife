@@ -1,17 +1,15 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Ecran from "@/components/Ecran";
+import Entete from "@/components/Entete";
+import Carte from "@/components/Carte";
+import Champ from "@/components/Champ";
+import Bouton from "@/components/Bouton";
+import Badge from "@/components/Badge";
+import Section from "@/components/Section";
+import EtatVide from "@/components/EtatVide";
 import {
   basculerDevoir,
   creerDevoir,
@@ -22,19 +20,18 @@ import {
   type Devoir,
 } from "@/lib/etudes";
 import { messageErreur } from "@/lib/api";
-import { Colors, Espacements, Rayons } from "@/constants/theme";
+import { Colors, Espacements, PRESSION, Rayons, Typo } from "@/constants/theme";
 
 /**
  * Mes devoirs.
  *
- * Tries par echeance, les faits repousses en bas. L'ajout se fait dans un
- * formulaire qui se deplie sur place : pas de navigation, pas d'ecran de plus.
+ * Triés par échéance, les faits repoussés en bas. L'ajout se fait dans un
+ * formulaire qui se déplie sur place : pas de navigation, pas d'écran de plus.
  *
- * L'echeance se saisit en JJ/MM, l'annee est deduite. Un etudiant ne tape pas
+ * L'échéance se saisit en JJ/MM, l'année est déduite. Un étudiant ne tape pas
  * "2026-09-12" à la main.
  */
 export default function Devoirs() {
-  const router = useRouter();
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [chargement, setChargement] = useState(true);
   const [formOuvert, setFormOuvert] = useState(false);
@@ -61,7 +58,7 @@ export default function Devoirs() {
     }, [charger]),
   );
 
-  /** "12/09" devient "2026-09-12". Si la date est passee, on vise l'an prochain. */
+  /** "12/09" devient "2026-09-12". Si la date est passée, on vise l'an prochain. */
   function versIso(saisie: string): string | null {
     const m = saisie.trim().match(/^(\d{1,2})[/.-](\d{1,2})$/);
     if (!m) return null;
@@ -72,13 +69,7 @@ export default function Devoirs() {
     let annee = maintenant.getFullYear();
     const essai = new Date(annee, mois - 1, jour, 12);
     if (essai.getTime() < maintenant.getTime() - 86400000) annee += 1;
-    return (
-      annee +
-      "-" +
-      String(mois).padStart(2, "0") +
-      "-" +
-      String(jour).padStart(2, "0")
-    );
+    return annee + "-" + String(mois).padStart(2, "0") + "-" + String(jour).padStart(2, "0");
   }
 
   const echeanceIso = echeance.trim() ? versIso(echeance) : null;
@@ -89,11 +80,7 @@ export default function Devoirs() {
     if (!peutValider) return;
     setEnCours(true);
     try {
-      await creerDevoir({
-        titre,
-        matiere: matiere || null,
-        echeance: echeanceIso,
-      });
+      await creerDevoir({ titre, matiere: matiere || null, echeance: echeanceIso });
       setTitre("");
       setMatiere("");
       setEcheance("");
@@ -106,7 +93,7 @@ export default function Devoirs() {
     }
   }
 
-  async function basculer(d: Devoir) {
+  async function cocher(d: Devoir) {
     setDevoirs((liste) =>
       liste.map((x) => (x.id === d.id ? { ...x, fait: !x.fait } : x)),
     );
@@ -119,7 +106,7 @@ export default function Devoirs() {
   }
 
   async function supprimer(id: string) {
-    setDevoirs((liste) => liste.filter((x) => x.id !== id));
+    setDevoirs((liste) => liste.filter((d) => d.id !== id));
     try {
       await supprimerDevoir(id);
     } catch (e) {
@@ -128,331 +115,193 @@ export default function Devoirs() {
     }
   }
 
-  const aFaire = devoirs.filter((d) => !d.fait);
-  const faits = devoirs.filter((d) => d.fait);
+  const aRendre = devoirs.filter((d) => !d.fait);
+  const termines = devoirs.filter((d) => d.fait);
+
+  function rendu(d: Devoir, dernier: boolean) {
+    const jours = joursRestants(d.echeance);
+    const retard = !d.fait && jours !== null && jours < 0;
+    const urgent = !d.fait && jours !== null && jours >= 0 && jours <= 2;
+    return (
+      <View key={d.id} style={[s.ligne, !dernier && s.trait]}>
+        <Pressable
+          onPress={() => cocher(d)}
+          hitSlop={8}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: d.fait }}
+          style={({ pressed }) => [
+            s.case,
+            d.fait && s.caseCochee,
+            pressed && { opacity: PRESSION },
+          ]}
+        >
+          {d.fait && <Ionicons name="checkmark" size={15} color={Colors.neutre.blanc} />}
+        </Pressable>
+
+        <Pressable
+          style={s.flex}
+          onLongPress={() => supprimer(d.id)}
+          onPress={() => cocher(d)}
+        >
+          <Text style={[Typo.corpsFort, d.fait && s.fait]} numberOfLines={2}>
+            {d.titre}
+          </Text>
+          <Text style={[Typo.petit, s.detail]}>
+            {[d.matiere, formaterDate(d.echeance)].filter(Boolean).join(" · ")}
+          </Text>
+        </Pressable>
+
+        {!d.fait && jours !== null && (
+          <Badge
+            ton={retard ? "erreur" : urgent ? "accent" : "neutre"}
+            variante="doux"
+            valeur={
+              retard
+                ? "en retard"
+                : jours === 0
+                  ? "aujourd'hui"
+                  : jours === 1
+                    ? "demain"
+                    : "J-" + jours
+            }
+          />
+        )}
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={s.page}>
-      <KeyboardAvoidingView
-        style={s.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView contentContainerStyle={s.contenu} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => router.back()} style={s.retour}>
-            <Text style={s.retourTexte}>Retour</Text>
-          </Pressable>
-
-          <Text style={s.titre}>Mes devoirs</Text>
-          <Text style={s.accroche}>
-            {aFaire.length === 0
-              ? "Rien à rendre pour l'instant."
-              : aFaire.length + (aFaire.length > 1 ? " devoirs à rendre." : " devoir à rendre.")}
-          </Text>
-
-          {!formOuvert && (
-            <Pressable style={s.ajout} onPress={() => setFormOuvert(true)}>
-              <Text style={s.ajoutTexte}>Ajouter un devoir</Text>
-            </Pressable>
-          )}
-
-          {formOuvert && (
-            <View style={s.form}>
-              <Text style={s.label}>Quoi</Text>
-              <TextInput
-                style={s.champ}
-                value={titre}
-                onChangeText={setTitre}
-                placeholder="Dissertation sur les obligations"
-                placeholderTextColor={Colors.neutre.discret}
-                editable={!enCours}
+    <Ecran
+      clavier
+      chargement={chargement}
+      erreur={erreur}
+      entete={
+        <Entete
+          retour
+          surtitre="Espace privé"
+          titre="Mes devoirs"
+          sousTitre={
+            aRendre.length > 0
+              ? aRendre.length + (aRendre.length > 1 ? " devoirs à rendre" : " devoir à rendre")
+              : "Rien à rendre"
+          }
+          action={
+            !formOuvert ? (
+              <Bouton
+                titre="Ajouter"
+                taille="sm"
+                icone="add"
+                onPress={() => setFormOuvert(true)}
               />
-
-              <Text style={[s.label, s.espace]}>Matière</Text>
-              <TextInput
-                style={s.champ}
-                value={matiere}
-                onChangeText={setMatiere}
-                placeholder="Droit civil"
-                placeholderTextColor={Colors.neutre.discret}
-                editable={!enCours}
-              />
-
-              <Text style={[s.label, s.espace]}>Pour quand</Text>
-              <TextInput
-                style={[s.champ, echeanceInvalide && s.champInvalide]}
-                value={echeance}
-                onChangeText={setEcheance}
-                placeholder="12/09"
-                placeholderTextColor={Colors.neutre.discret}
-                keyboardType="numbers-and-punctuation"
-                editable={!enCours}
-              />
-              <Text style={s.aide}>
-                {echeanceInvalide
-                  ? "Format attendu : jour/mois, par exemple 12/09."
-                  : echeanceIso
-                    ? "Échéance : " + formaterDate(echeanceIso)
-                    : "Jour/mois. Laisse vide s'il n'y a pas de date."}
-              </Text>
-
-              <View style={s.actions}>
-                <Pressable
-                  style={s.annuler}
-                  onPress={() => {
-                    setFormOuvert(false);
-                    setTitre("");
-                    setMatiere("");
-                    setEcheance("");
-                  }}
-                  disabled={enCours}
-                >
-                  <Text style={s.annulerTexte}>Annuler</Text>
-                </Pressable>
-                <Pressable
-                  style={[s.valider, !peutValider && s.inactif]}
-                  onPress={ajouter}
-                  disabled={!peutValider}
-                >
-                  {enCours ? (
-                    <ActivityIndicator color={Colors.neutre.blanc} />
-                  ) : (
-                    <Text style={s.validerTexte}>Ajouter</Text>
-                  )}
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
-
-          {chargement ? (
-            <ActivityIndicator
-              style={s.attente}
-              size="large"
-              color={Colors.prive.base}
+            ) : undefined
+          }
+        />
+      }
+    >
+      {formOuvert && (
+        <Carte style={s.form}>
+          <Champ
+            label="Quoi"
+            value={titre}
+            onChangeText={setTitre}
+            placeholder="Dissertation sur les obligations"
+            editable={!enCours}
+          />
+          <Champ
+            conteneur={s.espace}
+            label="Matière"
+            value={matiere}
+            onChangeText={setMatiere}
+            placeholder="Droit civil"
+            editable={!enCours}
+            aide="Facultatif."
+          />
+          <Champ
+            conteneur={s.espace}
+            label="Pour quand"
+            value={echeance}
+            onChangeText={setEcheance}
+            placeholder="12/09"
+            keyboardType="numbers-and-punctuation"
+            editable={!enCours}
+            erreur={echeanceInvalide ? "Format attendu : jour/mois, par exemple 12/09." : null}
+            aide="Jour/mois. Laisse vide s'il n'y a pas de date."
+          />
+          <View style={s.actions}>
+            <Bouton
+              titre="Annuler"
+              variante="discret"
+              taille="sm"
+              onPress={() => setFormOuvert(false)}
+              desactive={enCours}
             />
-          ) : (
-            <>
-              <View style={s.liste}>
-                {aFaire.map((d) => {
-                  const jours = joursRestants(d.echeance);
-                  const enRetard = jours !== null && jours < 0;
-                  const urgent = jours !== null && jours >= 0 && jours <= 2;
-                  return (
-                    <Pressable
-                      key={d.id}
-                      style={s.carte}
-                      onPress={() => basculer(d)}
-                      onLongPress={() => supprimer(d.id)}
-                    >
-                      <View style={s.case_} />
-                      <View style={s.flex}>
-                        <Text style={s.carteTitre}>{d.titre}</Text>
-                        <Text style={s.carteDetail}>
-                          {d.matiere ? d.matiere + " · " : ""}
-                          {formaterDate(d.echeance)}
-                        </Text>
-                      </View>
-                      {jours !== null && (
-                        <Text
-                          style={[
-                            s.badge,
-                            enRetard && s.badgeRetard,
-                            urgent && s.badgeUrgent,
-                          ]}
-                        >
-                          {enRetard
-                            ? "en retard"
-                            : jours === 0
-                              ? "aujourd'hui"
-                              : "J-" + jours}
-                        </Text>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
+            <Bouton
+              titre="Ajouter"
+              taille="sm"
+              onPress={ajouter}
+              enCours={enCours}
+              desactive={!peutValider}
+            />
+          </View>
+        </Carte>
+      )}
 
-              {aFaire.length === 0 && !chargement && (
-                <View style={s.vide}>
-                  <Text style={s.videTitre}>Aucun devoir en attente</Text>
-                  <Text style={s.videTexte}>
-                    Ajoute ce que tu dois rendre, tu le retrouveras sur ton QG.
-                  </Text>
-                </View>
-              )}
-
-              {faits.length > 0 && (
-                <>
-                  <Text style={s.section}>Terminés</Text>
-                  <View style={s.liste}>
-                    {faits.map((d) => (
-                      <Pressable
-                        key={d.id}
-                        style={[s.carte, s.carteFaite]}
-                        onPress={() => basculer(d)}
-                        onLongPress={() => supprimer(d.id)}
-                      >
-                        <View style={[s.case_, s.caseCochee]}>
-                          <Text style={s.coche}>OK</Text>
-                        </View>
-                        <View style={s.flex}>
-                          <Text style={[s.carteTitre, s.barre]}>{d.titre}</Text>
-                          <Text style={s.carteDetail}>
-                            {d.matiere ?? "sans matière"}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    ))}
-                  </View>
-                </>
-              )}
-
-              <Text style={s.astuce}>
-                Touche un devoir pour le cocher. Appui long pour le supprimer.
-              </Text>
-            </>
+      {devoirs.length === 0 && !formOuvert ? (
+        <EtatVide
+          icone="checkbox-outline"
+          titre="Aucun devoir en attente"
+          texte="Ajoute ce que tu dois rendre, tu le retrouveras sur ton QG le matin."
+          action={<Bouton titre="Ajouter un devoir" icone="add" onPress={() => setFormOuvert(true)} />}
+        />
+      ) : (
+        <>
+          {aRendre.length > 0 && (
+            <Section titre="À rendre">
+              <Carte>{aRendre.map((d, i) => rendu(d, i === aRendre.length - 1))}</Carte>
+            </Section>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          {termines.length > 0 && (
+            <Section titre={"Terminés · " + termines.length}>
+              <Carte>{termines.map((d, i) => rendu(d, i === termines.length - 1))}</Carte>
+            </Section>
+          )}
+          <Text style={[Typo.petit, s.astuce]}>
+            Touche un devoir pour le cocher. Appui long pour le supprimer.
+          </Text>
+        </>
+      )}
+    </Ecran>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: Colors.neutre.fond },
   flex: { flex: 1 },
-  contenu: { padding: Espacements.lg, paddingBottom: Espacements.xl * 2 },
-  retour: { marginBottom: Espacements.md },
-  retourTexte: { fontSize: 14, fontWeight: "600", color: Colors.prive.fonce },
-  titre: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-    color: Colors.neutre.encre,
-  },
-  accroche: { fontSize: 15, color: Colors.neutre.texte, marginTop: 4 },
-  ajout: {
-    marginTop: Espacements.lg,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: Colors.prive.base,
-    borderRadius: Rayons.md,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  ajoutTexte: { fontSize: 15, fontWeight: "700", color: Colors.prive.fonce },
-  form: {
-    marginTop: Espacements.lg,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.lg,
-    padding: Espacements.lg,
-  },
-  label: { fontSize: 13, fontWeight: "700", color: Colors.neutre.encre, marginBottom: 6 },
+  form: { padding: Espacements.lg },
   espace: { marginTop: Espacements.md },
-  champ: {
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    paddingHorizontal: Espacements.md,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: Colors.neutre.encre,
-    backgroundColor: Colors.neutre.fond,
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: Espacements.sm,
+    marginTop: Espacements.lg,
   },
-  champInvalide: { borderColor: Colors.etat.erreur },
-  aide: { fontSize: 12.5, color: Colors.neutre.discret, marginTop: 6 },
-  actions: { flexDirection: "row", gap: Espacements.sm, marginTop: Espacements.lg },
-  annuler: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: Rayons.md,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    alignItems: "center",
-  },
-  annulerTexte: { fontSize: 15, fontWeight: "600", color: Colors.neutre.texte },
-  valider: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: Rayons.md,
-    backgroundColor: Colors.prive.fonce,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 46,
-  },
-  validerTexte: { fontSize: 15, fontWeight: "700", color: Colors.neutre.blanc },
-  inactif: { opacity: 0.4 },
-  erreur: {
-    marginTop: Espacements.md,
-    fontSize: 14,
-    color: Colors.etat.erreur,
-    lineHeight: 20,
-  },
-  attente: { marginTop: Espacements.xl },
-  liste: { marginTop: Espacements.lg, gap: Espacements.sm },
-  carte: {
+  ligne: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Espacements.md,
-    backgroundColor: Colors.neutre.surface,
-    borderWidth: 1,
-    borderColor: Colors.neutre.trait,
-    borderRadius: Rayons.md,
-    padding: Espacements.md,
+    gap: Espacements.md - 2,
+    paddingVertical: Espacements.sm + 4,
   },
-  carteFaite: { opacity: 0.6 },
-  case_: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: Colors.neutre.discret,
+  trait: { borderBottomWidth: 1, borderBottomColor: Colors.neutre.traitDoux },
+  case: {
+    width: 24,
+    height: 24,
+    borderRadius: Rayons.sm,
+    borderWidth: 2,
+    borderColor: Colors.neutre.trait,
     alignItems: "center",
     justifyContent: "center",
   },
-  caseCochee: {
-    backgroundColor: Colors.social.base,
-    borderColor: Colors.social.base,
-  },
-  coche: { color: Colors.neutre.blanc, fontSize: 9, fontWeight: "800" },
-  carteTitre: { fontSize: 15, fontWeight: "600", color: Colors.neutre.encre },
-  barre: { textDecorationLine: "line-through" },
-  carteDetail: { fontSize: 13, color: Colors.neutre.discret, marginTop: 2 },
-  badge: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: Colors.neutre.discret,
-  },
-  badgeUrgent: { color: Colors.etat.alerte },
-  badgeRetard: { color: Colors.etat.erreur },
-  vide: {
-    marginTop: Espacements.lg,
-    padding: Espacements.lg,
-    borderRadius: Rayons.lg,
-    backgroundColor: Colors.prive.clair,
-  },
-  videTitre: { fontSize: 15, fontWeight: "700", color: Colors.prive.fonce },
-  videTexte: {
-    fontSize: 14,
-    color: Colors.neutre.texte,
-    marginTop: 4,
-    lineHeight: 20,
-  },
-  section: {
-    marginTop: Espacements.xl,
-    fontSize: 12,
-    letterSpacing: 1.5,
-    fontWeight: "700",
-    color: Colors.neutre.discret,
-    textTransform: "uppercase",
-  },
-  astuce: {
-    marginTop: Espacements.lg,
-    fontSize: 12.5,
-    color: Colors.neutre.discret,
-    textAlign: "center",
-  },
+  caseCochee: { backgroundColor: Colors.etat.succes, borderColor: Colors.etat.succes },
+  fait: { color: Colors.neutre.fantome, textDecorationLine: "line-through" },
+  detail: { marginTop: 2 },
+  astuce: { textAlign: "center" },
 });

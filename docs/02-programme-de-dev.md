@@ -232,6 +232,39 @@ peut ni lire la liste ni se donner le role, un moderateur d'une autre ecole voit
 zero signalement, le retrait efface la publication avec ses reponses et ses
 mentions j'aime.
 
+## Lot 8 - Refonte de l'interface (1 soiree)
+
+**But :** que l'app ait l'air d'un produit, pas d'un prototype qui marche.
+
+- [x] Systeme de design complet : palette papier, encre, deux surligneurs,
+      echelle typographique de dix styles, espacements sur une base de 4,
+      trois niveaux d'ombre (`constants/theme.ts`)
+- [x] Deux polices chargees au demarrage : Bricolage Grotesque pour les
+      titres, Figtree pour l'interface, avec repli sur la police systeme si
+      le chargement echoue
+- [x] Treize composants reutilisables dans `components/`
+- [x] Les vingt et un ecrans refaits, sans changer une ligne de logique
+- [x] Barre d'onglets dont la couleur active change entre le prive et le
+      social, avec pastille de messages non lus en direct
+- [x] Regles ecrites dans `docs/05-design.md` et rappelees dans `CLAUDE.md`
+
+**Ce qui a change dans l'usage, pas seulement a l'oeil :**
+
+- Le QG dessine la journee comme une frise verticale : ce qui est passe
+  s'efface, le prochain cours est marque, et une carte en tete donne l'heure
+  et le delai. On sait ou on en est sans lire.
+- Les chargements montrent des cartes fantomes plutot qu'un rond qui tourne.
+- Chaque etat vide propose une action. Avant, plusieurs etaient des
+  culs-de-sac.
+- La barre d'onglets porte le nombre de messages non lus, mis a jour en
+  direct par le canal Supabase.
+
+**Fini quand :** deux ecrans pris au hasard se ressemblent sans qu'on ait eu
+a y penser. C'est le cas : la gouttiere, l'en-tete, les cartes et les boutons
+viennent tous du meme endroit.
+
+---
+
 ### Relecture complete du 6 septembre 2026
 
 Passe sur l'ensemble du code avant de le donner a des testeurs. Ce qui a ete

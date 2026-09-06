@@ -41,6 +41,9 @@ supprimees de la base.
   l'appelant, `search_path` fixe sur `quota_stockage`.
 - `010_moderation` : role `moderateur`, protege par declencheur, et les
   fonctions de listage et de traitement des signalements.
+- `011_ecole_verrouillee` : le rattachement a un etablissement ne depend plus
+  que du domaine de l'adresse, verifie en base a chaque ecriture. Corrige la
+  faille de l'onboarding, qui laissait choisir son ecole dans une liste.
 
 ## Etat au 6 septembre 2026
 

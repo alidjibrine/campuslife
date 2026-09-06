@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getMonProfil, type Profil } from "@/lib/api";
+import { getMonProfil, messageErreur, type Profil } from "@/lib/api";
 import {
   formaterDate,
   joursRestants,
@@ -43,6 +43,7 @@ export default function MonQG() {
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -65,6 +66,7 @@ export default function MonQG() {
           if (!monte) return;
 
           setProfil(p);
+          setErreur(null);
           setDevoirs(d.filter((x) => !x.fait));
           setNotes(n);
           setProgramme(
@@ -85,8 +87,10 @@ export default function MonQG() {
                 })),
             ].sort((a, b) => a.heure.localeCompare(b.heure)),
           );
-        } catch {
-          if (monte) setProfil(null);
+        } catch (e) {
+          // Ne jamais echouer en silence : un ecran vide sans explication est
+          // le pire des retours pour quelqu'un qui teste l'app.
+          if (monte) setErreur(messageErreur(e));
         } finally {
           if (monte) setChargement(false);
         }
@@ -142,6 +146,12 @@ export default function MonQG() {
             month: "long",
           })}
         </Text>
+
+        {!!erreur && (
+          <View style={s.alerte}>
+            <Text style={s.alerteTexte}>{erreur}</Text>
+          </View>
+        )}
 
         <View style={s.bloc}>
           <Text style={s.blocTitre}>Aujourd&apos;hui</Text>
@@ -307,6 +317,15 @@ const s = StyleSheet.create({
   },
   badge: { fontSize: 11, fontWeight: "700", color: Colors.neutre.discret },
   badgeUrgent: { color: Colors.etat.alerte },
+  alerte: {
+    marginTop: Espacements.md,
+    padding: Espacements.md,
+    borderRadius: Rayons.md,
+    borderWidth: 1,
+    borderColor: Colors.etat.erreur,
+    backgroundColor: Colors.neutre.surface,
+  },
+  alerteTexte: { fontSize: 14, color: Colors.etat.erreur, lineHeight: 20 },
   badgeRetard: { color: Colors.etat.erreur },
   reste: {
     marginTop: Espacements.sm,

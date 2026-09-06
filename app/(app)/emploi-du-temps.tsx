@@ -81,8 +81,10 @@ export default function EmploiDuTemps() {
     setEnCours(true);
     setErreur(null);
     setInfo(null);
+    let creee: string | null = null;
     try {
       const source = await ajouterSourceLien(lien, libelle);
+      creee = source.id;
       const nombre = await synchroniser(source);
       setInfo(nombre + " séances importées.");
       setLien("");
@@ -91,6 +93,16 @@ export default function EmploiDuTemps() {
       await charger();
     } catch (e) {
       setErreur(messageErreur(e));
+      // La source vient d'etre creee et sa premiere synchronisation a echoue :
+      // on la retire, sinon elle reste dans la liste avec zero seance et un
+      // lien dont on sait deja qu'il ne fonctionne pas.
+      if (creee) {
+        try {
+          await supprimerSource(creee);
+        } catch {
+          // Tant pis, l'etudiant pourra la supprimer a la main.
+        }
+      }
       await charger();
     } finally {
       setEnCours(false);

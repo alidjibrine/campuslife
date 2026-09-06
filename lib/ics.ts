@@ -2,7 +2,7 @@
  * Lecture d'un agenda au format iCalendar (.ics).
  *
  * Les emplois du temps universitaires francais sortent d'ADE ou de Celcat, qui
- * publient un lien d'agenda a synchroniser. Ce fichier lit ce flux et en tire
+ * publient un lien d'agenda à synchroniser. Ce fichier lit ce flux et en tire
  * une liste de seances datees.
  *
  * Choix assumes :

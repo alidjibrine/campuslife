@@ -273,7 +273,7 @@ export default function EcranNotes() {
                     <View style={s.flex}>
                       <Text style={s.carteTitre}>{n.intitule}</Text>
                       <Text style={s.carteDetail}>
-                        {n.matiere ?? "sans matiere"}
+                        {n.matiere ?? "sans matière"}
                         {n.coefficient !== 1 ? " · coef. " + n.coefficient : ""}
                       </Text>
                     </View>

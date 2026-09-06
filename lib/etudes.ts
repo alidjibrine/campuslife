@@ -218,7 +218,7 @@ export function moyenneParMatiere(
 
 /** "2026-09-12" devient "sam. 12 sept." */
 export function formaterDate(iso: string | null): string {
-  if (!iso) return "sans echeance";
+  if (!iso) return "sans échéance";
   const d = new Date(iso + "T12:00:00");
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("fr-FR", {

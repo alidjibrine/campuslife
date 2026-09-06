@@ -98,32 +98,39 @@ export async function majMonProfil(champs: {
   nom: string;
   anneeEtude: string;
   filiere: string | null;
-  ecoleId?: string | null;
 }): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();
   const utilisateur = auth.user;
   if (!utilisateur) throw new Error("Aucune session active.");
 
-  const modifications: Record<string, unknown> = {
-    first_name: champs.prenom.trim(),
-    last_name: champs.nom.trim(),
-    year: champs.anneeEtude.trim(),
-    field: champs.filiere?.trim() || null,
-  };
-
-  // L'ecole n'est ecrite que si l'ecran la fournit : le rattachement
-  // automatique par domaine e-mail ne doit pas etre ecrase par erreur.
-  if (champs.ecoleId !== undefined) {
-    modifications.school_id = champs.ecoleId;
-  }
-
-  // upsert plutot qu'update : si le declencheur d'inscription n'a pas cree
-  // la ligne de profil, l'onboarding la cree au lieu de tourner en boucle.
-  const { error } = await supabase
-    .from("profiles")
-    .upsert({ id: utilisateur.id, ...modifications }, { onConflict: "id" });
+  // L'ecole ne figure pas ici, volontairement. Elle ne se choisit pas : elle
+  // decoule du domaine de l'adresse universitaire, et la base refuse toute
+  // autre valeur. Voir migration 011.
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: utilisateur.id,
+      first_name: champs.prenom.trim(),
+      last_name: champs.nom.trim(),
+      year: champs.anneeEtude.trim(),
+      field: champs.filiere?.trim() || null,
+    },
+    { onConflict: "id" },
+  );
 
   if (error) throw error;
+}
+
+/**
+ * Redemande le rattachement a un etablissement a partir du domaine de
+ * l'adresse. Utile quand l'ecole a ete ajoutee apres l'inscription.
+ * Renvoie l'ecole trouvee, ou null si le domaine n'est reconnu par aucune.
+ */
+export async function rattacherMonEcole(): Promise<Ecole | null> {
+  const { data, error } = await supabase.rpc("rattacher_mon_ecole");
+  if (error) throw error;
+  if (!data) return null;
+  const profil = await getMonProfil();
+  return profil?.ecole ?? null;
 }
 
 export async function listerEcoles(): Promise<Ecole[]> {

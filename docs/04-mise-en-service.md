@@ -110,8 +110,18 @@ Les comptes ne sont acceptes que si l'adresse appartient a un domaine reconnu.
 A ce jour, un seul etablissement est enregistre : l'Universite de Strasbourg,
 domaines `etu.unistra.fr` et `unistra.fr`.
 
-Pour ouvrir a un autre etablissement, il suffit d'ajouter une ligne dans la
-table `schools` avec ses domaines.
+C'est desormais la seule porte d'entree : depuis la migration 011, le
+rattachement ne peut plus etre choisi dans l'application, la base le refuse.
+Pour ouvrir a un autre etablissement, ajouter une ligne dans `schools` :
+
+```sql
+insert into public.schools (name, short_name, city, email_domains)
+values ('Universite de Lorraine', 'UL', 'Nancy',
+        array['etu.univ-lorraine.fr', 'univ-lorraine.fr']);
+```
+
+Un etudiant deja inscrit avant l'ajout de son ecole n'est pas rattache
+automatiquement. Il rouvre l'onboarding et appuie sur "Verifier a nouveau".
 
 Ce qu'il faut leur dire honnetement : l'app est en test, les donnees peuvent
 etre perdues, les messages prives ne sont pas chiffres de bout en bout et tu as

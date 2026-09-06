@@ -232,6 +232,38 @@ peut ni lire la liste ni se donner le role, un moderateur d'une autre ecole voit
 zero signalement, le retrait efface la publication avec ses reponses et ses
 mentions j'aime.
 
+### Relecture complete du 6 septembre 2026
+
+Passe sur l'ensemble du code avant de le donner a des testeurs. Ce qui a ete
+trouve et corrige :
+
+1. **Le rattachement a l'etablissement pouvait etre choisi** (migration 011).
+   C'etait la faille la plus serieuse, et elle etait signalee en commentaire
+   dans l'onboarding depuis le lot 1, avec la mention "a durcir avant
+   l'ouverture au public". Elle ne l'avait pas ete. Quand la detection par
+   domaine echouait, l'ecran proposait une liste deroulante, et cette valeur
+   partait telle quelle dans `profiles.school_id`, colonne que chacun peut
+   modifier sur sa propre ligne. N'importe quelle adresse permettait donc de se
+   declarer a Strasbourg et d'acceder au fil, a l'annuaire et a la messagerie de
+   tous ses etudiants. Toute la regle de communaute fermee tenait a ce champ.
+   La liste est remplacee par une liste d'information non selectionnable et un
+   bouton de nouvelle verification.
+2. **Trois textes echappes a la passe d'accents** : "sans matiere", "sans
+   echeance", "reconnue a ton adresse". La verification automatique les avait
+   manques parce qu'elle ecartait les chaines entierement en minuscules.
+3. **Une source d'agenda dont la premiere synchronisation echoue** restait dans
+   la liste avec zero seance et un lien deja connu comme mauvais. Elle est
+   maintenant retiree.
+4. **Le QG echouait en silence** : en cas d'erreur reseau, l'ecran s'affichait
+   vide sans un mot. C'est le pire retour possible pour quelqu'un qui teste.
+   L'erreur est desormais affichee.
+
+**Verifie en base** (transaction annulee) : une adresse non universitaire ne
+peut se rattacher a aucun etablissement, ni par mise a jour ni par insertion
+directe, un etudiant deja rattache ne peut pas changer d'ecole tout en pouvant
+modifier le reste de son profil, et le rattachement fonctionne des que le
+domaine est ajoute a l'etablissement.
+
 **Fini quand :** un etudiant que tu ne connais pas installe l'app et s'en sert
 une semaine sans toi.
 

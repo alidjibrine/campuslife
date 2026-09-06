@@ -31,7 +31,7 @@ import { Colors, Espacements, Rayons } from "@/constants/theme";
  * formulaire qui se deplie sur place : pas de navigation, pas d'ecran de plus.
  *
  * L'echeance se saisit en JJ/MM, l'annee est deduite. Un etudiant ne tape pas
- * "2026-09-12" a la main.
+ * "2026-09-12" à la main.
  */
 export default function Devoirs() {
   const router = useRouter();
@@ -299,7 +299,7 @@ export default function Devoirs() {
                         <View style={s.flex}>
                           <Text style={[s.carteTitre, s.barre]}>{d.titre}</Text>
                           <Text style={s.carteDetail}>
-                            {d.matiere ?? "sans matiere"}
+                            {d.matiere ?? "sans matière"}
                           </Text>
                         </View>
                       </Pressable>

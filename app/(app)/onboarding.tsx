@@ -17,6 +17,7 @@ import {
   listerEcoles,
   majMonProfil,
   messageErreur,
+  rattacherMonEcole,
   type Ecole,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,12 +28,15 @@ const ANNEES = ["L1", "L2", "L3", "M1", "M2", "Autre"];
 /**
  * Onboarding du profil, obligatoire avant d'entrer dans l'app.
  *
- * L'ecole est normalement deja rattachee par le domaine de l'adresse e-mail.
- * Si la detection a echoue, l'etudiant la choisit dans la liste : mieux vaut
- * une roue de secours qu'un mur.
+ * L'ecole ne se choisit pas. Elle decoule du domaine de l'adresse
+ * universitaire, et la base refuse toute autre valeur (migration 011). Il y
+ * avait ici, jusqu'au 6 septembre 2026, une liste deroulante permettant de se
+ * declarer dans l'etablissement de son choix : c'etait la faille qui annulait
+ * toute la regle de communaute fermee.
  *
- * A durcir avant l'ouverture au public (lot 7) : ce choix manuel permet de se
- * declarer dans n'importe quelle ecole. Tant qu'on est en test ferme, ca passe.
+ * Si le domaine n'est reconnu par aucun etablissement, l'etudiant ne peut pas
+ * entrer. C'est le prix d'une communaute fermee, et c'est assume. Le bouton de
+ * verification sert au cas ou l'ecole aurait ete ajoutee depuis l'inscription.
  */
 export default function Onboarding() {
   const router = useRouter();
@@ -45,6 +49,7 @@ export default function Onboarding() {
   const [ecoles, setEcoles] = useState<Ecole[]>([]);
   const [ecoleId, setEcoleId] = useState<string | null>(null);
   const [ecoleDetectee, setEcoleDetectee] = useState<Ecole | null>(null);
+  const [verification, setVerification] = useState(false);
   const [chargement, setChargement] = useState(true);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -77,6 +82,27 @@ export default function Onboarding() {
 
   const complet = prenom.trim() && nom.trim() && annee && ecoleId;
 
+  /** Redemande le rattachement, au cas ou l'ecole aurait ete ajoutee depuis. */
+  async function verifierEcole() {
+    setErreur(null);
+    setVerification(true);
+    try {
+      const ecole = await rattacherMonEcole();
+      if (ecole) {
+        setEcoleDetectee(ecole);
+        setEcoleId(ecole.id);
+      } else {
+        setErreur(
+          "Ton adresse n'est toujours reconnue par aucun établissement.",
+        );
+      }
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setVerification(false);
+    }
+  }
+
   async function enregistrer() {
     if (!complet || !annee) return;
     setErreur(null);
@@ -87,7 +113,6 @@ export default function Onboarding() {
         nom,
         anneeEtude: annee,
         filiere: filiere || null,
-        ecoleId,
       });
       router.replace("/qg");
     } catch (e) {
@@ -174,39 +199,45 @@ export default function Onboarding() {
               <View style={s.detectee}>
                 <Text style={s.detecteeNom}>{ecoleDetectee.nom}</Text>
                 <Text style={s.detecteeVille}>
-                  {ecoleDetectee.ville} · reconnue a ton adresse e-mail
+                  {ecoleDetectee.ville} · reconnue à ton adresse e-mail
                 </Text>
               </View>
             ) : (
               <>
                 <Text style={s.aide}>
-                  Ton adresse e-mail ne correspond à aucune école connue.
-                  Choisis la tienne dans la liste.
+                  Ton adresse e-mail n&apos;est reconnue par aucun
+                  établissement. CampusLife est une communauté fermée : le
+                  rattachement se fait uniquement par l&apos;adresse
+                  universitaire, il ne se choisit pas.
+                </Text>
+
+                <Pressable
+                  style={s.verifier}
+                  onPress={verifierEcole}
+                  disabled={verification || enCours}
+                >
+                  <Text style={s.verifierTexte}>
+                    {verification ? "Vérification..." : "Vérifier à nouveau"}
+                  </Text>
+                </Pressable>
+
+                <Text style={[s.aide, s.espace]}>
+                  Établissements couverts aujourd&apos;hui :
                 </Text>
                 <View style={s.liste}>
-                  {ecoles.map((e) => {
-                    const actif = ecoleId === e.id;
-                    return (
-                      <Pressable
-                        key={e.id}
-                        onPress={() => setEcoleId(e.id)}
-                        disabled={enCours}
-                        style={[s.ligneEcole, actif && s.ligneEcoleActive]}
-                      >
-                        <View style={s.flex}>
-                          <Text style={[s.ecoleNom, actif && s.ecoleNomActif]}>
-                            {e.nom}
-                          </Text>
-                          <Text style={s.ecoleVille}>{e.ville}</Text>
-                        </View>
-                        {actif && <Text style={s.coche}>OK</Text>}
-                      </Pressable>
-                    );
-                  })}
+                  {ecoles.map((e) => (
+                    <View key={e.id} style={s.ligneEcole}>
+                      <View style={s.flex}>
+                        <Text style={s.ecoleNom}>{e.nom}</Text>
+                        <Text style={s.ecoleVille}>{e.ville}</Text>
+                      </View>
+                    </View>
+                  ))}
                 </View>
                 <Text style={s.aide}>
-                  Ton école n&apos;est pas dans la liste ? Elle n&apos;est pas
-                  encore sur CampusLife. Écris-moi, je l&apos;ajoute.
+                  La tienne n&apos;y est pas ? Écris-moi avec ton adresse
+                  universitaire, je l&apos;ajoute, et tu reviens appuyer sur
+                  Vérifier à nouveau.
                 </Text>
               </>
             )}
@@ -323,14 +354,19 @@ const s = StyleSheet.create({
     padding: Espacements.md,
     backgroundColor: Colors.neutre.fond,
   },
-  ligneEcoleActive: {
+  verifier: {
+    marginTop: Espacements.md,
+    alignSelf: "flex-start",
+    paddingHorizontal: Espacements.md,
+    paddingVertical: 10,
+    borderRadius: Rayons.sm,
+    borderWidth: 1,
     borderColor: Colors.prive.base,
     backgroundColor: Colors.prive.clair,
   },
+  verifierTexte: { fontSize: 14, fontWeight: "700", color: Colors.prive.fonce },
   ecoleNom: { fontSize: 15, fontWeight: "600", color: Colors.neutre.encre },
-  ecoleNomActif: { color: Colors.prive.fonce },
   ecoleVille: { fontSize: 13, color: Colors.neutre.discret, marginTop: 2 },
-  coche: { fontSize: 12, fontWeight: "800", color: Colors.prive.fonce },
   erreur: {
     marginTop: Espacements.md,
     fontSize: 14,

@@ -239,7 +239,7 @@ export default function Communaute() {
           {publications.map((p) => (
             <Carte key={p.id} onPress={() => router.push(("/sujet/" + p.id) as Href)}>
               <View style={s.enteteSujet}>
-                <Avatar nom={p.auteurNom} taille={38} />
+                <Avatar nom={p.auteurNom} url={p.auteurAvatar} taille={38} />
                 <View style={s.flex}>
                   <Text style={Typo.corpsFort} numberOfLines={1}>
                     {p.auteurNom || "Étudiant"}

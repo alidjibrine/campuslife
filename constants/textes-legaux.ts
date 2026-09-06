@@ -155,7 +155,7 @@ const confidentialite: DocumentLegal = {
       titre: "2. Données traitées",
       paragraphes: [
         "Données de compte : adresse de messagerie et mot de passe, ce dernier n'étant conservé que sous forme chiffrée et n'étant accessible à personne.",
-        "Données de profil : prénom, nom, année d'études, filière, établissement de rattachement.",
+        "Données de profil : prénom, nom, année d'études, filière, établissement de rattachement, et la photo de profil si vous en déposez une.",
         "Données scolaires privées : cours, devoirs, notes, sources et séances d'emploi du temps.",
         "Contenus communautaires : publications, commentaires, mentions j'aime, abonnements, signalements.",
         "Messages privés : contenu des messages échangés avec un autre membre.",
@@ -176,6 +176,7 @@ const confidentialite: DocumentLegal = {
         "Les données scolaires privées et les séances d'emploi du temps ne sont visibles d'aucun autre utilisateur. Les règles d'accès de la base de données interdisent techniquement leur lecture par un tiers.",
         "Les publications, commentaires et le profil sont visibles des seuls membres du même établissement. Un membre d'un autre établissement ne peut ni les lire ni les rechercher.",
         "Les messages privés ne sont lisibles que par les deux participants à la conversation. Ils ne sont toutefois pas chiffrés de bout en bout : l'éditeur, en sa qualité d'administrateur de la base de données, dispose de la capacité technique d'y accéder. Il s'engage à ne le faire que sur réquisition légale ou lorsque la sécurité d'une personne l'exige.",
+        "La photo de profil, lorsqu'elle est déposée, est hébergée à une adresse publique. Cette adresse comporte un identifiant aléatoire et ne se devine pas, mais toute personne qui la possède peut consulter la photo sans être connectée. La suppression de la photo, depuis l'onglet Profil, retire le fichier définitivement.",
       ],
     },
     {
@@ -204,7 +205,7 @@ const confidentialite: DocumentLegal = {
     {
       titre: "8. Suppression du compte",
       paragraphes: [
-        "La suppression s'effectue depuis l'onglet Profil. Elle entraîne l'effacement immédiat et définitif du compte, du profil, des cours, devoirs, notes, séances d'emploi du temps, publications, commentaires, mentions j'aime, abonnements, signalements et fichiers déposés.",
+        "La suppression s'effectue depuis l'onglet Profil. Elle entraîne l'effacement immédiat et définitif du compte, du profil, de la photo de profil, des cours, devoirs, notes, séances d'emploi du temps, publications, commentaires, mentions j'aime, abonnements, signalements et fichiers déposés.",
         "Les conversations privées auxquelles vous participiez sont supprimées dans leur intégralité, y compris les messages de votre interlocuteur. Ce dernier n'en conserve donc aucune trace.",
         "Cette opération est irréversible et ne fait l'objet d'aucun délai de rétractation.",
       ],

@@ -69,9 +69,9 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignSelf: "flex-start",
   },
-  rangee: { flexDirection: "row", alignItems: "flex-end", gap: Espacements.md },
+  rangee: { flexDirection: "row", alignItems: "center", gap: Espacements.md },
   flex: { flex: 1 },
   apresSurtitre: { marginTop: 5 },
   sousTitre: { marginTop: 5 },
-  action: { paddingBottom: 3 },
+  action: {},
 });

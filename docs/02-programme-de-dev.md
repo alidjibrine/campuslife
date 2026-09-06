@@ -265,6 +265,27 @@ viennent tous du meme endroit.
 
 ---
 
+### Photo de profil (ajoutee au lot 8)
+
+- [x] Depot depuis l'onglet Profil : galerie, recadrage carre, reduction a
+      512 pixels et compression avant envoi
+- [x] Verification du quota avant ecriture, premier vrai usage du garde-fou
+      pose au lot 7
+- [x] Decodage base64 vers octets ecrit a la main (`lib/base64.ts`), parce que
+      `atob` n'est pas fiable selon les moteurs et que `Buffer` n'existe pas.
+      14 tests.
+- [x] La photo apparait partout : QG, profil, annuaire, fil, sujet, liste des
+      messages, en-tete de conversation (migration 012 pour cette derniere)
+- [x] Retrait de la photo, et effacement avec le compte
+- [x] Politique de confidentialite mise a jour : la photo est mentionnee, et
+      le fait que son adresse est publique aussi
+
+**Bonne surprise :** le chemin choisi, `identifiant du compte / avatar.jpg`,
+est exactement celui de l'application de juin 2026. La photo deja deposee a
+l'epoque reapparait sans rien faire.
+
+---
+
 ### Relecture complete du 6 septembre 2026
 
 Passe sur l'ensemble du code avant de le donner a des testeurs. Ce qui a ete

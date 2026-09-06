@@ -44,6 +44,8 @@ supprimees de la base.
 - `011_ecole_verrouillee` : le rattachement a un etablissement ne depend plus
   que du domaine de l'adresse, verifie en base a chaque ecriture. Corrige la
   faille de l'onboarding, qui laissait choisir son ecole dans une liste.
+- `012_avatar_dans_les_conversations` : la liste des conversations renvoie la
+  photo de l'interlocuteur.
 
 ## Etat au 6 septembre 2026
 

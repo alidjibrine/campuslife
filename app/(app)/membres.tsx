@@ -136,7 +136,7 @@ export default function Membres() {
             return (
               <Carte key={m.id}>
                 <View style={s.ligne}>
-                  <Avatar nom={nom} taille={44} />
+                  <Avatar nom={nom} url={m.avatarUrl} taille={44} />
                   <View style={s.flex}>
                     <Text style={Typo.corpsFort} numberOfLines={1}>
                       {nom}

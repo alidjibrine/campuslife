@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Ecran from "@/components/Ecran";
 import Entete from "@/components/Entete";
@@ -9,6 +9,7 @@ import Section from "@/components/Section";
 import Bouton from "@/components/Bouton";
 import EtatVide from "@/components/EtatVide";
 import Badge from "@/components/Badge";
+import Avatar from "@/components/Avatar";
 import { getMonProfil, messageErreur, type Profil } from "@/lib/api";
 import {
   formaterDate,
@@ -21,7 +22,7 @@ import {
   type Note,
 } from "@/lib/etudes";
 import { formaterHeure, listerSeances } from "@/lib/agenda";
-import { Colors, Espacements, Polices, Rayons, Typo } from "@/constants/theme";
+import { Colors, Espacements, PRESSION, Polices, Rayons, Typo } from "@/constants/theme";
 
 /**
  * Mon QG : l'écran du matin.
@@ -164,6 +165,22 @@ export default function MonQG() {
           })}
           titre={salutation + (profil?.prenom ? " " + profil.prenom : "")}
           sousTitre={profil?.ecole?.nom ?? undefined}
+          action={
+            <Pressable
+              onPress={() => router.push("/profil" as Href)}
+              accessibilityRole="button"
+              accessibilityLabel="Mon profil"
+              hitSlop={6}
+              style={({ pressed }) => pressed && { opacity: PRESSION }}
+            >
+              <Avatar
+                nom={[profil?.prenom, profil?.nom].filter(Boolean).join(" ")}
+                url={profil?.avatarUrl}
+                taille={52}
+                ton="prive"
+              />
+            </Pressable>
+          }
         />
       }
     >

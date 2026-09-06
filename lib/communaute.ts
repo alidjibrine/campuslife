@@ -24,6 +24,7 @@ export type Publication = {
   id: string;
   auteurId: string;
   auteurNom: string;
+  auteurAvatar: string | null;
   categorie: string | null;
   contenu: string;
   creeLe: Date;
@@ -37,6 +38,7 @@ export type Commentaire = {
   id: string;
   auteurId: string;
   auteurNom: string;
+  auteurAvatar: string | null;
   contenu: string;
   creeLe: Date;
   cestMoi: boolean;
@@ -46,6 +48,7 @@ export type Membre = {
   id: string;
   prenom: string | null;
   nom: string | null;
+  avatarUrl: string | null;
   anneeEtude: string | null;
   filiere: string | null;
   suivi: boolean;
@@ -69,6 +72,24 @@ async function monNomAffiche(): Promise<string> {
   return (prenom + " " + nom).trim() || "Étudiant";
 }
 
+/**
+ * Les photos de profil de mon etablissement, indexees par identifiant.
+ *
+ * Les publications portent le nom de leur auteur mais pas sa photo, et la cle
+ * etrangere de `posts` pointe vers les comptes, pas vers les profils : on ne
+ * peut donc pas joindre les deux en une requete. Une seconde requete, dont les
+ * regles d'acces limitent deja le resultat a ma propre ecole, suffit.
+ */
+async function avatarsDeMonEcole(): Promise<Map<string, string>> {
+  const { data } = await supabase.from("profiles").select("id, avatar_url");
+  const table = new Map<string, string>();
+  for (const l of data ?? []) {
+    const url = l.avatar_url as string | null;
+    if (url) table.set(l.id as string, url);
+  }
+  return table;
+}
+
 function compte(valeur: unknown): number {
   if (Array.isArray(valeur) && valeur.length > 0) {
     return Number((valeur[0] as { count?: number }).count ?? 0);
@@ -88,16 +109,17 @@ export async function listerPublications(): Promise<Publication[]> {
     .limit(50);
   if (error) throw error;
 
-  const { data: mesJaime } = await supabase
-    .from("post_likes")
-    .select("post_id")
-    .eq("user_id", utilisateur);
+  const [{ data: mesJaime }, avatars] = await Promise.all([
+    supabase.from("post_likes").select("post_id").eq("user_id", utilisateur),
+    avatarsDeMonEcole(),
+  ]);
   const aimes = new Set((mesJaime ?? []).map((l) => l.post_id as string));
 
   return (data ?? []).map((l) => ({
     id: l.id as string,
     auteurId: l.user_id as string,
     auteurNom: (l.author_name as string) ?? "Étudiant",
+    auteurAvatar: avatars.get(l.user_id as string) ?? null,
     categorie: (l.category as string) ?? null,
     contenu: l.content as string,
     creeLe: new Date(l.created_at as string),
@@ -147,16 +169,20 @@ export async function listerCommentaires(
   publicationId: string,
 ): Promise<Commentaire[]> {
   const utilisateur = await moi();
-  const { data, error } = await supabase
-    .from("comments")
-    .select("id, user_id, author_name, content, created_at")
-    .eq("post_id", publicationId)
-    .order("created_at");
+  const [{ data, error }, avatars] = await Promise.all([
+    supabase
+      .from("comments")
+      .select("id, user_id, author_name, content, created_at")
+      .eq("post_id", publicationId)
+      .order("created_at"),
+    avatarsDeMonEcole(),
+  ]);
   if (error) throw error;
   return (data ?? []).map((l) => ({
     id: l.id as string,
     auteurId: l.user_id as string,
     auteurNom: (l.author_name as string) ?? "Étudiant",
+    auteurAvatar: avatars.get(l.user_id as string) ?? null,
     contenu: l.content as string,
     creeLe: new Date(l.created_at as string),
     cestMoi: (l.user_id as string) === utilisateur,
@@ -187,7 +213,7 @@ export async function listerMembres(): Promise<Membre[]> {
   // Les regles d'acces ne renvoient que les profils de mon etablissement.
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, first_name, last_name, year, field")
+    .select("id, first_name, last_name, year, field, avatar_url")
     .order("first_name");
   if (error) throw error;
 
@@ -201,6 +227,7 @@ export async function listerMembres(): Promise<Membre[]> {
     id: l.id as string,
     prenom: (l.first_name as string) ?? null,
     nom: (l.last_name as string) ?? null,
+    avatarUrl: (l.avatar_url as string) ?? null,
     anneeEtude: (l.year as string) ?? null,
     filiere: (l.field as string) ?? null,
     suivi: suivis.has(l.id as string),

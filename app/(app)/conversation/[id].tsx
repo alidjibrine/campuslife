@@ -48,6 +48,7 @@ export default function ConversationEcran() {
   const [monId, setMonId] = useState<string | null>(null);
   const [titre, setTitre] = useState("Conversation");
   const [sousTitre, setSousTitre] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [brouillon, setBrouillon] = useState("");
   const [chargement, setChargement] = useState(true);
@@ -76,6 +77,7 @@ export default function ConversationEcran() {
         setMonId(identifiant);
         setTitre(conv?.autreNom ?? "Conversation");
         setSousTitre(conv?.autreFiliere ?? null);
+        setPhoto(conv?.autreAvatar ?? null);
         setMessages(historique);
         setErreur(null);
         await marquerLu(id);
@@ -151,7 +153,7 @@ export default function ConversationEcran() {
         >
           <Ionicons name="chevron-back" size={20} color={Colors.neutre.encre} />
         </Pressable>
-        <Avatar nom={titre} taille={38} ton="social" />
+        <Avatar nom={titre} url={photo} taille={38} ton="social" />
         <View style={s.flex}>
           <Text style={Typo.sousTitre} numberOfLines={1}>
             {titre}

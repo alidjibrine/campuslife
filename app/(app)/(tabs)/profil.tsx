@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Ecran from "@/components/Ecran";
 import Entete from "@/components/Entete";
@@ -12,9 +12,10 @@ import Avatar from "@/components/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMonProfil, messageErreur, type Profil as TypeProfil } from "@/lib/api";
 import { formaterOctets, stockage, supprimerMonCompte, type Stockage } from "@/lib/compte";
+import { choisirEtTeleverserAvatar, retirerAvatar } from "@/lib/avatar";
 import { suisJeModerateur } from "@/lib/moderation";
 import { LISTE_DOCUMENTS } from "@/constants/textes-legaux";
-import { Colors, Espacements, Rayons, Typo } from "@/constants/theme";
+import { Colors, Espacements, PRESSION, Rayons, Typo } from "@/constants/theme";
 
 /** Mon profil : qui je suis, mon école, mes textes, et les deux sorties. */
 export default function Profil() {
@@ -25,6 +26,7 @@ export default function Profil() {
   const [moderateur, setModerateur] = useState(false);
   const [chargement, setChargement] = useState(true);
   const [suppression, setSuppression] = useState(false);
+  const [photoEnCours, setPhotoEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
@@ -49,6 +51,52 @@ export default function Profil() {
       charger();
     }, [charger]),
   );
+
+  /**
+   * Le menu de la photo. Deux entrees seulement, et « Retirer » n'apparait
+   * que s'il y a quelque chose a retirer.
+   */
+  function menuPhoto() {
+    if (photoEnCours) return;
+    const choix: {
+      text: string;
+      style?: "cancel" | "destructive";
+      onPress?: () => void;
+    }[] = [
+      { text: profil?.avatarUrl ? "Changer la photo" : "Choisir une photo", onPress: changerPhoto },
+    ];
+    if (profil?.avatarUrl) {
+      choix.push({ text: "Retirer la photo", style: "destructive", onPress: enleverPhoto });
+    }
+    choix.push({ text: "Annuler", style: "cancel" });
+    Alert.alert("Ma photo de profil", undefined, choix);
+  }
+
+  async function changerPhoto() {
+    setPhotoEnCours(true);
+    setErreur(null);
+    try {
+      const adresse = await choisirEtTeleverserAvatar();
+      if (adresse) setProfil((p) => (p ? { ...p, avatarUrl: adresse } : p));
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setPhotoEnCours(false);
+    }
+  }
+
+  async function enleverPhoto() {
+    setPhotoEnCours(true);
+    setErreur(null);
+    try {
+      await retirerAvatar();
+      setProfil((p) => (p ? { ...p, avatarUrl: null } : p));
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setPhotoEnCours(false);
+    }
+  }
 
   function confirmerDeconnexion() {
     Alert.alert("Se déconnecter", "Tu devras retaper ton mot de passe.", [
@@ -102,7 +150,26 @@ export default function Profil() {
     <Ecran chargement={chargement} erreur={erreur} entete={<Entete titre="Profil" />}>
       <Carte>
         <View style={s.identite}>
-          <Avatar nom={nomComplet || "?"} taille={62} ton="prive" />
+          <Pressable
+            onPress={menuPhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Changer ma photo de profil"
+            style={({ pressed }) => pressed && { opacity: PRESSION }}
+          >
+            <Avatar
+              nom={nomComplet || "?"}
+              url={profil?.avatarUrl}
+              taille={68}
+              ton="prive"
+            />
+            <View style={s.pastillePhoto}>
+              {photoEnCours ? (
+                <ActivityIndicator size="small" color={Colors.neutre.blanc} />
+              ) : (
+                <Ionicons name="camera" size={13} color={Colors.neutre.blanc} />
+              )}
+            </View>
+          </Pressable>
           <View style={s.flex}>
             <Text style={Typo.sousTitre} numberOfLines={1}>
               {nomComplet || "Profil incomplet"}
@@ -238,6 +305,19 @@ export default function Profil() {
 const s = StyleSheet.create({
   flex: { flex: 1 },
   identite: { flexDirection: "row", alignItems: "center", gap: Espacements.md },
+  pastillePhoto: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: Rayons.rond,
+    backgroundColor: Colors.prive.base,
+    borderWidth: 2.5,
+    borderColor: Colors.neutre.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   mail: { marginTop: 2 },
   roleRang: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 },
   roleTexte: {

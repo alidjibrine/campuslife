@@ -93,7 +93,7 @@ export default function Messages() {
               onPress={() => router.push(("/conversation/" + c.id) as Href)}
             >
               <View style={s.ligne}>
-                <Avatar nom={c.autreNom} taille={46} />
+                <Avatar nom={c.autreNom} url={c.autreAvatar} taille={46} />
                 <View style={s.flex}>
                   <View style={s.haut}>
                     <Text style={[Typo.corpsFort, s.nom]} numberOfLines={1}>

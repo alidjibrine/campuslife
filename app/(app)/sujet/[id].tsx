@@ -144,7 +144,7 @@ export default function Sujet() {
         <>
           <Carte>
             <View style={s.entete}>
-              <Avatar nom={publication.auteurNom} taille={42} />
+              <Avatar nom={publication.auteurNom} url={publication.auteurAvatar} taille={42} />
               <View style={s.flex}>
                 <Text style={Typo.corpsFort} numberOfLines={1}>
                   {publication.auteurNom || "Étudiant"}
@@ -192,7 +192,7 @@ export default function Sujet() {
               {commentaires.map((c) => (
                 <Carte key={c.id} onLongPress={() => menuCommentaire(c)}>
                   <View style={s.entete}>
-                    <Avatar nom={c.auteurNom} taille={34} />
+                    <Avatar nom={c.auteurNom} url={c.auteurAvatar} taille={34} />
                     <View style={s.flex}>
                       <Text style={[Typo.petitFort, s.nomReponse]} numberOfLines={1}>
                         {c.auteurNom || "Étudiant"}

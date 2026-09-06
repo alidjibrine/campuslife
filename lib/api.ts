@@ -22,6 +22,7 @@ export type Profil = {
   nom: string | null;
   anneeEtude: string | null;
   filiere: string | null;
+  avatarUrl: string | null;
   ecoleId: string | null;
   ecole: Ecole | null;
   estComplet: boolean;
@@ -41,6 +42,7 @@ type LigneProfil = {
   last_name: string | null;
   year: string | null;
   field: string | null;
+  avatar_url: string | null;
   school_id: string | null;
   schools: LigneEcole | null;
 };
@@ -66,6 +68,7 @@ function versProfil(ligne: LigneProfil): Profil {
     nom,
     anneeEtude: annee,
     filiere: ligne.field?.trim() || null,
+    avatarUrl: ligne.avatar_url || null,
     ecoleId: ligne.school_id,
     ecole: versEcole(ligne.schools),
     // Un profil est complet quand on sait qui il est, ou il en est,
@@ -75,7 +78,7 @@ function versProfil(ligne: LigneProfil): Profil {
 }
 
 const CHAMPS_PROFIL =
-  "id, email, first_name, last_name, year, field, school_id, schools (id, name, short_name, city)";
+  "id, email, first_name, last_name, year, field, avatar_url, school_id, schools (id, name, short_name, city)";
 
 export async function getMonProfil(): Promise<Profil | null> {
   const { data: auth } = await supabase.auth.getUser();

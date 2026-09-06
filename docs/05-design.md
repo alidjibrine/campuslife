@@ -123,7 +123,7 @@ ou une variante, on ne bricole pas dans l'ecran.
 | `Champ` | Saisie avec label, aide, erreur, et bordure qui reagit au focus |
 | `Puce` | Un choix parmi plusieurs sur une ligne |
 | `Badge` | Une pastille de comptage ou d'etat |
-| `Avatar` | Les initiales dans un rond, teinte derivee du nom |
+| `Avatar` | La photo de profil, ou les initiales dans un rond si elle manque |
 | `Ligne` | Une ligne de liste avec ses fentes gauche et droite |
 | `Section` | Une etiquette de rubrique et son contenu |
 | `EtatVide` | Icone, titre, explication, et une porte de sortie |
@@ -153,6 +153,26 @@ ou une variante, on ne bricole pas dans l'ecran.
    mois et il a fallu 133 remplacements verifies un par un pour reparer ca.
 
 ---
+
+## La photo de profil
+
+Elle se depose depuis l'onglet Profil : on touche la pastille appareil photo,
+on choisit une image, on la recadre en carre. L'app la reduit a 512 pixels de
+cote et la compresse avant l'envoi, parce qu'une photo de telephone pese quatre
+megaoctets et que le seau en refuse deux.
+
+Le chemin est toujours `identifiant du compte / avatar.jpg`, seul chemin que
+les regles d'acces du stockage autorisent, et le meme que celui de juin 2026 :
+les photos deposees a l'epoque reapparaissent telles quelles.
+
+Le composant `Avatar` prend une `url` et un `nom`. Sans url, ou si l'image ne
+charge pas, il retombe sur les initiales dans un rond dont la teinte derive du
+nom. **Un ecran n'affiche jamais une photo autrement qu'avec ce composant** :
+c'est ce qui garantit qu'un profil sans photo ne laisse jamais un carre vide.
+
+Le seau des avatars est public. L'adresse contient un identifiant aleatoire et
+ne se devine pas, mais elle se partage. C'est ecrit dans la politique de
+confidentialite.
 
 ## Ce qui reste a faire cote design
 

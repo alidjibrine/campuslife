@@ -14,6 +14,7 @@ export type Conversation = {
   autreId: string;
   autreNom: string | null;
   autreFiliere: string | null;
+  autreAvatar: string | null;
   dernierMessage: string | null;
   dernierLe: Date;
   nonLus: number;
@@ -45,6 +46,7 @@ export async function listerConversations(): Promise<Conversation[]> {
     autreId: String(l.autre_id),
     autreNom: (l.autre_nom as string | null) ?? null,
     autreFiliere: (l.autre_filiere as string | null) ?? null,
+    autreAvatar: (l.autre_avatar as string | null) ?? null,
     dernierMessage: (l.dernier_message as string | null) ?? null,
     dernierLe: new Date(String(l.dernier_at)),
     nonLus: Number(l.non_lus ?? 0),

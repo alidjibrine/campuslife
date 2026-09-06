@@ -131,7 +131,8 @@ recliquer sur "mettre a jour" ne cree pas de doublon.
 
 - [x] Tables et fermeture par ecole deja en place : `posts`, `comments`,
       `post_likes`, filtres sur `my_school_id()`
-- [ ] Ecrire la migration 004 : signalements, et filtrage de `follows` par ecole
+- [x] Migration 004 appliquee : table `reports`, et abonnements filtres par ecole
+      des deux cotes (on ne suit qu'un membre de sa propre ecole)
 - [ ] Ecran Sujets : fil de l'etablissement, categories, publication
 - [ ] Ecran Sujet : reponses, ordre chronologique
 - [ ] Ecran Membres : annuaire de l'ecole, suivre et ne plus suivre

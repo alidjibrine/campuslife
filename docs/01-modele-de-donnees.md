@@ -33,7 +33,8 @@ Anti-doublon a l'import : la cle unique `(user_id, external_uid)` sur
 | `schools` | Le referentiel des etablissements, avec leurs domaines e-mail |
 | `posts` | Publications, portant `school_id` |
 | `comments`, `post_likes` | Suivent l'ecole de la publication parente |
-| `follows` | Abonnements. **Pas encore filtre par ecole, a faire au lot 5** |
+| `follows` | Abonnements, filtres par ecole des deux cotes depuis la migration 004 |
+| `reports` | Signalements : cible, motif, statut, rattaches a l'ecole du signaleur |
 | `conversations`, `messages` | Messagerie a deux, deja complete |
 | `profile_views` | Qui a consulte mon profil |
 
@@ -51,6 +52,8 @@ infinie. Toute nouvelle politique sociale doit passer par cette fonction.
 
 ## Ce qui reste a modeliser
 
-- Signalements et moderation (lot 5)
-- Filtrage de `follows` par ecole (lot 5)
-- Quota de stockage : le champ existe cote code mais rien ne le verifie (lot 7)
+- Quota de stockage : le champ `profiles.stockage_octets` existe mais rien ne le
+  verifie encore (lot 7)
+- Consultation des signalements par la moderation : volontairement absente de
+  l'app. Un etudiant ne voit que ses propres signalements. Le traitement se fera
+  par un role dedie, pas depuis le telephone.

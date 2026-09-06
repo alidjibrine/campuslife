@@ -113,15 +113,23 @@ recliquer sur "mettre a jour" ne cree pas de doublon.
 
 **But :** l'ecran qu'on ouvre le matin.
 
-- [ ] Remplacer l'ecran provisoire par le vrai accueil
-- [ ] Bloc "aujourd'hui" : prochain cours, salle, heure
-- [ ] Bloc "a rendre" : les trois devoirs les plus proches
-- [ ] Bloc "ma moyenne" : moyenne generale et derniere note saisie
-- [ ] Navigation par onglets : QG, Etudes, Communaute, Profil
+- [x] L'ecran provisoire est remplace par le vrai accueil
+- [x] Bloc "aujourd'hui" : le programme du jour, seances importees et cours
+      saisis melanges, avec le prochain creneau mis en avant
+- [x] Bloc "a rendre" : les trois devoirs les plus proches, avec J-x et retard
+- [x] Bloc "ma moyenne" : moyenne generale et derniere note
+- [x] Navigation par onglets : QG, Etudes, Communaute, Profil
+- [x] Onglet Communaute qui annonce le lot 5 au lieu de ne rien faire
+- [x] Onglet Profil : identite, etablissement, modification, deconnexion
 
 **A copier de Najda :** la structure de l'accueil et des onglets.
 
 **Fini quand :** j'ouvre l'app et je sais quoi faire de ma journee sans cliquer.
+
+> **6 septembre 2026.** Ecrit et verifie au typage. Le chemin d'ecriture des
+> lots 1, 2 et 3 a ete teste directement en base, sous les regles d'acces reelles
+> d'un etudiant connecte : devoir, cours, note, source d'agenda, seance, profil,
+> publication et signalement passent tous. Reste le test sur le telephone.
 
 ---
 

@@ -66,7 +66,7 @@ export default function AppLayout() {
         contentStyle: { backgroundColor: Colors.neutre.fond },
       }}
     >
-      <Stack.Screen name="qg" />
+      <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
       <Stack.Screen name="cours" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="devoirs" options={{ animation: "slide_from_right" }} />

@@ -126,10 +126,20 @@ C'est ecrit dans la politique de confidentialite, autant le dire de vive voix.
   par document. Ces valeurs sont dans la fonction `quota_stockage()` en base et
   dans `storage.buckets`. A revoir quand l'app permettra vraiment de deposer des
   fichiers, ce qui n'est pas encore le cas.
-- Les signalements arrivent dans la table `reports` avec le statut `pending`.
-  Il n'existe aucun ecran pour les traiter : il faut les lire dans le tableau de
-  bord Supabase. Un ecran de moderation sera necessaire des que la communaute
-  depassera quelques dizaines de personnes.
-- L'interface est ecrite sans accents, heritage des premiers ecrans. Les trois
-  documents legaux, eux, sont accentues. C'est incoherent et cela se voit. Une
-  passe de correction sur l'ensemble des textes de l'interface est a prevoir.
+- Les signalements se traitent depuis l'app, onglet Profil, entree Moderation.
+  Cette entree n'apparait que pour un compte dont la colonne `role` de la table
+  `profiles` vaut `moderateur`. Ton compte l'est deja.
+
+  Pour nommer quelqu'un d'autre, depuis l'editeur SQL de Supabase :
+
+  ```sql
+  update public.profiles set role = 'moderateur'
+   where email = 'adresse@etu.unistra.fr';
+  ```
+
+  Cette commande ne fonctionne que depuis le tableau de bord. Un declencheur
+  interdit toute modification du role depuis l'application, sans quoi n'importe
+  quel membre pourrait se nommer moderateur en modifiant son profil.
+
+- Un moderateur ne voit que les signalements de son propre etablissement, et ne
+  peut retirer que des contenus de son etablissement.

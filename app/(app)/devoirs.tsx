@@ -145,8 +145,8 @@ export default function Devoirs() {
           <Text style={s.titre}>Mes devoirs</Text>
           <Text style={s.accroche}>
             {aFaire.length === 0
-              ? "Rien a rendre pour l'instant."
-              : aFaire.length + (aFaire.length > 1 ? " devoirs a rendre." : " devoir a rendre.")}
+              ? "Rien à rendre pour l'instant."
+              : aFaire.length + (aFaire.length > 1 ? " devoirs à rendre." : " devoir à rendre.")}
           </Text>
 
           {!formOuvert && (
@@ -167,7 +167,7 @@ export default function Devoirs() {
                 editable={!enCours}
               />
 
-              <Text style={[s.label, s.espace]}>Matiere</Text>
+              <Text style={[s.label, s.espace]}>Matière</Text>
               <TextInput
                 style={s.champ}
                 value={matiere}
@@ -191,7 +191,7 @@ export default function Devoirs() {
                 {echeanceInvalide
                   ? "Format attendu : jour/mois, par exemple 12/09."
                   : echeanceIso
-                    ? "Echeance : " + formaterDate(echeanceIso)
+                    ? "Échéance : " + formaterDate(echeanceIso)
                     : "Jour/mois. Laisse vide s'il n'y a pas de date."}
               </Text>
 
@@ -284,7 +284,7 @@ export default function Devoirs() {
 
               {faits.length > 0 && (
                 <>
-                  <Text style={s.section}>Termines</Text>
+                  <Text style={s.section}>Terminés</Text>
                   <View style={s.liste}>
                     {faits.map((d) => (
                       <Pressable

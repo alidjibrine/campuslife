@@ -79,7 +79,7 @@ export default function Messages() {
         <Text style={s.sousTitre}>
           {total > 0
             ? total + (total > 1 ? " messages non lus" : " message non lu")
-            : "Tes discussions privees"}
+            : "Tes discussions privées"}
         </Text>
 
         {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
@@ -90,7 +90,7 @@ export default function Messages() {
           <View style={s.vide}>
             <Text style={s.videTitre}>Aucune conversation</Text>
             <Text style={s.videTexte}>
-              Va dans l'annuaire de ton ecole et ecris a quelqu'un. Une conversation
+              Va dans l'annuaire de ton école et écris à quelqu'un. Une conversation
               s'ouvre au premier message, pas avant.
             </Text>
             <Pressable
@@ -114,7 +114,7 @@ export default function Messages() {
                 <View style={s.flex}>
                   <View style={s.ligneHaut}>
                     <Text style={s.nom} numberOfLines={1}>
-                      {c.autreNom ?? "Etudiant"}
+                      {c.autreNom ?? "Étudiant"}
                     </Text>
                     <Text style={s.quand}>{depuis(c.dernierLe)}</Text>
                   </View>
@@ -122,7 +122,7 @@ export default function Messages() {
                     style={[s.apercu, c.nonLus > 0 && s.apercuNonLu]}
                     numberOfLines={1}
                   >
-                    {c.dernierMessage ?? "Conversation ouverte, rien d'ecrit"}
+                    {c.dernierMessage ?? "Conversation ouverte, rien d'écrit"}
                   </Text>
                 </View>
                 {c.nonLus > 0 && (

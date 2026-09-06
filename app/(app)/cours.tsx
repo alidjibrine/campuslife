@@ -117,7 +117,7 @@ export default function EcranCours() {
           </Pressable>
 
           <Text style={s.titre}>Mes cours</Text>
-          <Text style={s.accroche}>Ta semaine type, matiere par matiere.</Text>
+          <Text style={s.accroche}>Ta semaine type, matière par matière.</Text>
 
           {!formOuvert && (
             <Pressable style={s.ajout} onPress={() => setFormOuvert(true)}>
@@ -127,7 +127,7 @@ export default function EcranCours() {
 
           {formOuvert && (
             <View style={s.form}>
-              <Text style={s.label}>Matiere</Text>
+              <Text style={s.label}>Matière</Text>
               <TextInput
                 style={s.champ}
                 value={intitule}
@@ -159,7 +159,7 @@ export default function EcranCours() {
 
               <View style={s.deuxColonnes}>
                 <View style={s.flex}>
-                  <Text style={[s.label, s.espace]}>Debut</Text>
+                  <Text style={[s.label, s.espace]}>Début</Text>
                   <TextInput
                     style={s.champ}
                     value={debut}
@@ -226,8 +226,8 @@ export default function EcranCours() {
             <View style={s.vide}>
               <Text style={s.videTitre}>Aucun cours pour l&apos;instant</Text>
               <Text style={s.videTexte}>
-                Ajoute tes matieres et leurs creneaux. Au lot 3, un simple lien
-                d&apos;emploi du temps remplira tout ca d&apos;un coup.
+                Ajoute tes matières et leurs créneaux. Au lot 3, un simple lien
+                d&apos;emploi du temps remplira tout ça d&apos;un coup.
               </Text>
             </View>
           ) : (

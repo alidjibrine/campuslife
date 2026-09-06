@@ -78,7 +78,7 @@ export default function Sujet() {
 
   function menuCommentaire(c: Commentaire) {
     if (c.cestMoi) {
-      Alert.alert("Ma reponse", undefined, [
+      Alert.alert("Ma réponse", undefined, [
         { text: "Annuler", style: "cancel" },
         {
           text: "Supprimer",
@@ -95,14 +95,14 @@ export default function Sujet() {
       ]);
       return;
     }
-    Alert.alert("Signaler cette reponse", "Pourquoi ce contenu pose probleme ?", [
+    Alert.alert("Signaler cette réponse", "Pourquoi ce contenu pose problème ?", [
       { text: "Annuler", style: "cancel" },
       ...MOTIFS_SIGNALEMENT.map((m) => ({
         text: m.libelle,
         onPress: async () => {
           try {
             await signaler("comment", c.id, m.cle);
-            Alert.alert("Merci", "Le signalement a bien ete enregistre.");
+            Alert.alert("Merci", "Le signalement a bien été enregistré.");
           } catch (e) {
             Alert.alert("Signalement", messageErreur(e));
           }
@@ -127,7 +127,7 @@ export default function Sujet() {
             <ActivityIndicator style={s.attente} size="large" color={Colors.social.base} />
           ) : !publication ? (
             <Text style={s.vide}>
-              Cette publication n&apos;existe plus, ou elle appartient a une autre
+              Cette publication n&apos;existe plus, ou elle appartient à une autre
               ecole.
             </Text>
           ) : (
@@ -152,9 +152,9 @@ export default function Sujet() {
 
               <Text style={s.section}>
                 {commentaires.length === 0
-                  ? "Aucune reponse"
+                  ? "Aucune réponse"
                   : commentaires.length +
-                    (commentaires.length > 1 ? " reponses" : " reponse")}
+                    (commentaires.length > 1 ? " réponses" : " réponse")}
               </Text>
 
               <View style={s.liste}>
@@ -190,7 +190,7 @@ export default function Sujet() {
                   style={s.champ}
                   value={reponse}
                   onChangeText={setReponse}
-                  placeholder="Ecrire une reponse"
+                  placeholder="Écrire une réponse"
                   placeholderTextColor={Colors.neutre.discret}
                   multiline
                   editable={!enCours}

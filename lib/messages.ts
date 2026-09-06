@@ -58,7 +58,7 @@ export async function listerConversations(): Promise<Conversation[]> {
 export async function ouvrirConversation(autreId: string): Promise<string> {
   const { data, error } = await supabase.rpc("ouvrir_conversation", { autre: autreId });
   if (error) throw error;
-  if (!data) throw new Error("La conversation n'a pas pu etre ouverte.");
+  if (!data) throw new Error("La conversation n'a pas pu être ouverte.");
   return String(data);
 }
 
@@ -90,7 +90,7 @@ export async function envoyer(conversationId: string, contenu: string): Promise<
   const texte = contenu.trim();
   if (!texte) throw new Error("Le message est vide.");
   if (texte.length > PLAFOND_CARACTERES) {
-    throw new Error("Message trop long, " + PLAFOND_CARACTERES + " caracteres maximum.");
+    throw new Error("Message trop long, " + PLAFOND_CARACTERES + " caractères maximum.");
   }
   const monId = await moi();
   const { data, error } = await supabase

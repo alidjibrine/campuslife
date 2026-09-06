@@ -98,13 +98,13 @@ export default function Membres() {
         </Pressable>
 
         <Text style={s.titre}>Membres</Text>
-        <Text style={s.sousTitre}>{ecole ?? "Mon etablissement"}</Text>
+        <Text style={s.sousTitre}>{ecole ?? "Mon établissement"}</Text>
 
         <TextInput
           style={s.champ}
           value={recherche}
           onChangeText={setRecherche}
-          placeholder="Chercher un nom, une filiere"
+          placeholder="Chercher un nom, une filière"
           placeholderTextColor={Colors.neutre.discret}
           autoCapitalize="none"
         />
@@ -121,7 +121,7 @@ export default function Membres() {
             <Text style={s.videTexte}>
               {terme
                 ? "Essaie un autre nom."
-                : "Aucun autre etudiant de ton ecole n'a encore rejoint CampusLife. Le premier cercle, c'est toi qui l'amenes."}
+                : "Aucun autre étudiant de ton école n'a encore rejoint CampusLife. Le premier cercle, c'est toi qui l'amènes."}
             </Text>
           </View>
         ) : (
@@ -135,7 +135,7 @@ export default function Membres() {
                 </View>
                 <View style={s.flex}>
                   <Text style={s.nom}>
-                    {[m.prenom, m.nom].filter(Boolean).join(" ") || "Etudiant"}
+                    {[m.prenom, m.nom].filter(Boolean).join(" ") || "Étudiant"}
                   </Text>
                   <Text style={s.detail}>
                     {[m.anneeEtude, m.filiere].filter(Boolean).join(" · ") ||

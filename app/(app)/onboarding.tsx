@@ -111,15 +111,15 @@ export default function Onboarding() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={s.contenu} keyboardShouldPersistTaps="handled">
-          <Text style={s.surtitre}>PREMIERE ETAPE</Text>
+          <Text style={s.surtitre}>PREMIÈRE ÉTAPE</Text>
           <Text style={s.titre}>Qui es-tu ?</Text>
           <Text style={s.accroche}>
-            Trois informations, une fois pour toutes. Elles servent a t&apos;afficher
-            dans la communaute de ton ecole.
+            Trois informations, une fois pour toutes. Elles servent à t&apos;afficher
+            dans la communauté de ton école.
           </Text>
 
           <View style={s.bloc}>
-            <Text style={s.label}>Prenom</Text>
+            <Text style={s.label}>Prénom</Text>
             <TextInput
               style={s.champ}
               value={prenom}
@@ -139,7 +139,7 @@ export default function Onboarding() {
               editable={!enCours}
             />
 
-            <Text style={[s.label, s.espace]}>Annee d&apos;etude</Text>
+            <Text style={[s.label, s.espace]}>Année d&apos;étude</Text>
             <View style={s.puces}>
               {ANNEES.map((a) => {
                 const actif = annee === a;
@@ -156,7 +156,7 @@ export default function Onboarding() {
               })}
             </View>
 
-            <Text style={[s.label, s.espace]}>Filiere</Text>
+            <Text style={[s.label, s.espace]}>Filière</Text>
             <TextInput
               style={s.champ}
               value={filiere}
@@ -169,7 +169,7 @@ export default function Onboarding() {
           </View>
 
           <View style={s.bloc}>
-            <Text style={s.label}>Mon ecole</Text>
+            <Text style={s.label}>Mon école</Text>
             {ecoleDetectee ? (
               <View style={s.detectee}>
                 <Text style={s.detecteeNom}>{ecoleDetectee.nom}</Text>
@@ -180,7 +180,7 @@ export default function Onboarding() {
             ) : (
               <>
                 <Text style={s.aide}>
-                  Ton adresse e-mail ne correspond a aucune ecole connue.
+                  Ton adresse e-mail ne correspond à aucune école connue.
                   Choisis la tienne dans la liste.
                 </Text>
                 <View style={s.liste}>
@@ -205,8 +205,8 @@ export default function Onboarding() {
                   })}
                 </View>
                 <Text style={s.aide}>
-                  Ton ecole n&apos;est pas dans la liste ? Elle n&apos;est pas
-                  encore sur CampusLife. Ecris-moi, je l&apos;ajoute.
+                  Ton école n&apos;est pas dans la liste ? Elle n&apos;est pas
+                  encore sur CampusLife. Écris-moi, je l&apos;ajoute.
                 </Text>
               </>
             )}
@@ -227,7 +227,7 @@ export default function Onboarding() {
           </Pressable>
 
           <Pressable style={s.lien} onPress={deconnexion} disabled={enCours}>
-            <Text style={s.lienTexte}>Me deconnecter</Text>
+            <Text style={s.lienTexte}>Me déconnecter</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

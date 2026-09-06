@@ -37,6 +37,10 @@ supprimees de la base.
 - `008_suppression_sans_storage` : correction de la 007, qui rendait la
   suppression de compte impossible en tentant d'effacer des lignes de
   `storage.objects`, ce que Supabase interdit.
+- `009_stockage_sans_parametre` : `stockage_utilise` ne repond plus que pour
+  l'appelant, `search_path` fixe sur `quota_stockage`.
+- `010_moderation` : role `moderateur`, protege par declencheur, et les
+  fonctions de listage et de traitement des signalements.
 
 ## Etat au 6 septembre 2026
 

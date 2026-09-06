@@ -172,7 +172,7 @@ export default function ConversationEcran() {
               <View style={s.vide}>
                 <Text style={s.videTitre}>Rien pour l'instant</Text>
                 <Text style={s.videTexte}>
-                  Ecris le premier message. Personne d'autre que vous deux ne le lira.
+                  Écris le premier message. Personne d'autre que vous deux ne le lira.
                 </Text>
               </View>
             )}
@@ -203,7 +203,7 @@ export default function ConversationEcran() {
             style={s.champ}
             value={brouillon}
             onChangeText={setBrouillon}
-            placeholder="Ecrire un message"
+            placeholder="Écrire un message"
             placeholderTextColor={Colors.neutre.discret}
             multiline
             maxLength={2000}

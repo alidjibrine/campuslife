@@ -216,6 +216,22 @@ avant l'appel a la fonction.
 
 La marche a suivre complete est dans `docs/04-mise-en-service.md`.
 
+### Ajoute en cours de route
+
+- [x] Accents remis dans toute l'interface. L'app etait ecrite sans accents,
+      heritage des premiers ecrans, ce qui jurait avec les textes legaux.
+      133 fragments remplaces, verifies un par un, aucun identifiant touche.
+- [x] Ecran de moderation (migration 010) : role `moderateur` en base, protege
+      par un declencheur pour qu'un membre ne se nomme pas lui-meme, liste des
+      signalements de son etablissement avec le contenu vise, retrait du
+      contenu ou classement sans suite. Un contenu signale dix fois se classe
+      d'un coup.
+
+**Verifie en base** (transaction annulee, trois comptes) : un membre simple ne
+peut ni lire la liste ni se donner le role, un moderateur d'une autre ecole voit
+zero signalement, le retrait efface la publication avec ses reponses et ses
+mentions j'aime.
+
 **Fini quand :** un etudiant que tu ne connais pas installe l'app et s'en sert
 une semaine sans toi.
 

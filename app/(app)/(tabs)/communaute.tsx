@@ -121,7 +121,7 @@ export default function Communaute() {
     }
     Alert.alert(
       "Signaler cette publication",
-      "Pourquoi ce contenu pose probleme ?",
+      "Pourquoi ce contenu pose problème ?",
       [
         { text: "Annuler", style: "cancel" },
         ...MOTIFS_SIGNALEMENT.map((m) => ({
@@ -129,7 +129,7 @@ export default function Communaute() {
           onPress: async () => {
             try {
               await signaler("post", p.id, m.cle);
-              Alert.alert("Merci", "Le signalement a bien ete enregistre.");
+              Alert.alert("Merci", "Le signalement a bien été enregistré.");
             } catch (e) {
               Alert.alert("Signalement", messageErreur(e));
             }
@@ -161,8 +161,8 @@ export default function Communaute() {
         >
           <View style={s.entete}>
             <View style={s.flex}>
-              <Text style={s.titre}>Communaute</Text>
-              <Text style={s.sousTitre}>{ecole ?? "Mon etablissement"}</Text>
+              <Text style={s.titre}>Communauté</Text>
+              <Text style={s.sousTitre}>{ecole ?? "Mon établissement"}</Text>
             </View>
             <Link href={"/membres" as Href} asChild>
               <Pressable style={s.boutonMembres}>
@@ -198,7 +198,7 @@ export default function Communaute() {
                 style={s.champ}
                 value={contenu}
                 onChangeText={setContenu}
-                placeholder="Ce que tu veux dire a ta promo"
+                placeholder="Ce que tu veux dire à ta promo"
                 placeholderTextColor={Colors.neutre.discret}
                 multiline
                 editable={!enCours}
@@ -237,7 +237,7 @@ export default function Communaute() {
             <View style={s.vide}>
               <Text style={s.videTitre}>Le fil est vide</Text>
               <Text style={s.videTexte}>
-                Personne n&apos;a encore publie dans ton ecole. Lance la premiere
+                Personne n&apos;a encore publié dans ton école. Lance la première
                 discussion, c&apos;est toujours quelqu&apos;un qui commence.
               </Text>
             </View>
@@ -292,9 +292,9 @@ export default function Communaute() {
                         />
                         <Text style={s.actionTexte}>
                           {p.commentaires === 0
-                            ? "Repondre"
+                            ? "Répondre"
                             : p.commentaires +
-                              (p.commentaires > 1 ? " reponses" : " reponse")}
+                              (p.commentaires > 1 ? " réponses" : " réponse")}
                         </Text>
                       </Pressable>
                     </Link>

@@ -76,6 +76,7 @@ export default function AppLayout() {
       <Stack.Screen name="sujet/[id]" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="conversation/[id]" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="document/[nom]" options={{ animation: "slide_from_right" }} />
+      <Stack.Screen name="moderation" options={{ animation: "slide_from_right" }} />
     </Stack>
   );
 }

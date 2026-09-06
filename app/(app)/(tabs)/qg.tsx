@@ -126,7 +126,7 @@ export default function MonQG() {
     maintenant.getHours() < 12
       ? "Bonjour"
       : maintenant.getHours() < 18
-        ? "Bon apres-midi"
+        ? "Bon après-midi"
         : "Bonsoir";
 
   return (
@@ -148,7 +148,7 @@ export default function MonQG() {
           {programme.length === 0 ? (
             <Text style={s.vide}>
               Rien au programme. Importe ton emploi du temps depuis
-              l&apos;onglet Etudes, ou ajoute tes cours a la main.
+              l&apos;onglet Études, ou ajoute tes cours à la main.
             </Text>
           ) : (
             programme.map((x) => {
@@ -166,7 +166,7 @@ export default function MonQG() {
                     </Text>
                     {!!x.salle && <Text style={s.ligneSalle}>{x.salle}</Text>}
                   </View>
-                  {cestLaProchaine && <Text style={s.marqueur}>a suivre</Text>}
+                  {cestLaProchaine && <Text style={s.marqueur}>à suivre</Text>}
                 </View>
               );
             })
@@ -174,9 +174,9 @@ export default function MonQG() {
         </View>
 
         <View style={s.bloc}>
-          <Text style={s.blocTitre}>A rendre</Text>
+          <Text style={s.blocTitre}>À rendre</Text>
           {troisDevoirs.length === 0 ? (
-            <Text style={s.vide}>Rien a rendre. Profites-en.</Text>
+            <Text style={s.vide}>Rien à rendre. Profites-en.</Text>
           ) : (
             troisDevoirs.map((d) => {
               const jours = joursRestants(d.echeance);
@@ -222,7 +222,7 @@ export default function MonQG() {
             <Text style={s.moyenneLabel}>Ma moyenne</Text>
             <Text style={s.moyenneDetail}>
               {derniere
-                ? "Derniere note : " +
+                ? "Dernière note : " +
                   derniere.intitule +
                   ", " +
                   String(derniere.valeur).replace(".", ",") +

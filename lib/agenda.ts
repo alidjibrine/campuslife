@@ -87,7 +87,7 @@ export async function supprimerSource(id: string): Promise<void> {
 /** Telecharge le lien puis remplace les seances de la source. */
 export async function synchroniser(source: SourceAgenda): Promise<number> {
   if (!source.url) {
-    throw new Error("Cette source n'a pas de lien a telecharger.");
+    throw new Error("Cette source n'a pas de lien à télécharger.");
   }
   let texte: string;
   try {
@@ -95,16 +95,16 @@ export async function synchroniser(source: SourceAgenda): Promise<number> {
       headers: { Accept: "text/calendar, text/plain, */*" },
     });
     if (!reponse.ok) {
-      throw new Error("Le serveur a repondu " + reponse.status + ".");
+      throw new Error("Le serveur a répondu " + reponse.status + ".");
     }
     texte = await reponse.text();
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
-    await noterStatut(source.id, "Echec : " + detail);
+    await noterStatut(source.id, "Échec : " + detail);
     throw new Error(
-      "Impossible de telecharger l'agenda. " +
+      "Impossible de télécharger l'agenda. " +
         detail +
-        " Verifie que le lien est public et qu'il se termine par .ics.",
+        " Vérifie que le lien est public et qu'il se termine par .ics.",
     );
   }
   return remplacerSeances(source.id, texte);
@@ -117,9 +117,9 @@ export async function remplacerSeances(
 ): Promise<number> {
   const evenements = analyserIcs(texte);
   if (evenements.length === 0) {
-    await noterStatut(sourceId, "Aucune seance trouvee");
+    await noterStatut(sourceId, "Aucune séance trouvée");
     throw new Error(
-      "Aucune seance trouvee. Le lien ne pointe peut-etre pas vers un agenda au format .ics.",
+      "Aucune séance trouvée. Le lien ne pointe peut-être pas vers un agenda au format .ics.",
     );
   }
 

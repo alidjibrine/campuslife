@@ -43,7 +43,7 @@ export default function Login() {
         const { sessionCreee } = await inscription(email, motDePasse);
         if (!sessionCreee) {
           setInfo(
-            "Compte cree. Ouvre le lien de confirmation envoye a " +
+            "Compte créé. Ouvre le lien de confirmation envoyé à " +
               email.trim().toLowerCase() +
               ", puis reviens te connecter.",
           );
@@ -77,7 +77,7 @@ export default function Login() {
             </View>
             <Text style={s.titre}>CampusLife</Text>
             <Text style={s.accroche}>
-              Ton agenda d&apos;etudes, et la communaute de ton ecole.
+              Ton agenda d&apos;études, et la communauté de ton école.
             </Text>
           </View>
 
@@ -98,7 +98,7 @@ export default function Login() {
             {estInscription && (
               <Text style={s.aide}>
                 Utilise ton adresse universitaire : c&apos;est elle qui te
-                rattache automatiquement a ton ecole.
+                rattache automatiquement à ton école.
               </Text>
             )}
 
@@ -109,7 +109,7 @@ export default function Login() {
               style={s.champ}
               value={motDePasse}
               onChangeText={setMotDePasse}
-              placeholder="6 caracteres minimum"
+              placeholder="6 caractères minimum"
               placeholderTextColor={Colors.neutre.discret}
               secureTextEntry
               autoCapitalize="none"
@@ -128,7 +128,7 @@ export default function Login() {
                 <ActivityIndicator color={Colors.neutre.blanc} />
               ) : (
                 <Text style={s.boutonTexte}>
-                  {estInscription ? "Creer mon compte" : "Me connecter"}
+                  {estInscription ? "Créer mon compte" : "Me connecter"}
                 </Text>
               )}
             </Pressable>
@@ -145,8 +145,8 @@ export default function Login() {
           >
             <Text style={s.basculeTexte}>
               {estInscription
-                ? "J'ai deja un compte, me connecter"
-                : "Pas encore de compte ? En creer un"}
+                ? "J'ai déjà un compte, me connecter"
+                : "Pas encore de compte ? En créer un"}
             </Text>
           </Pressable>
         </ScrollView>

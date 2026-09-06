@@ -9,12 +9,12 @@ import { supabase } from "@/lib/supabase";
  * pas le coup, c'est voulu : la securite ne doit pas dependre de l'affichage.
  */
 
-export const CATEGORIES = ["Entraide", "Bon plan", "Evenement", "Question"] as const;
+export const CATEGORIES = ["Entraide", "Bon plan", "Événement", "Question"] as const;
 export type Categorie = (typeof CATEGORIES)[number];
 
 export const MOTIFS_SIGNALEMENT = [
-  { cle: "spam", libelle: "Spam ou publicite" },
-  { cle: "harcelement", libelle: "Harcelement" },
+  { cle: "spam", libelle: "Spam ou publicité" },
+  { cle: "harcelement", libelle: "Harcèlement" },
   { cle: "choquant", libelle: "Contenu choquant" },
   { cle: "fausse_info", libelle: "Fausse information" },
   { cle: "autre", libelle: "Autre" },
@@ -66,7 +66,7 @@ async function monNomAffiche(): Promise<string> {
     .maybeSingle();
   const prenom = (data?.first_name as string) ?? "";
   const nom = (data?.last_name as string) ?? "";
-  return (prenom + " " + nom).trim() || "Etudiant";
+  return (prenom + " " + nom).trim() || "Étudiant";
 }
 
 function compte(valeur: unknown): number {
@@ -97,7 +97,7 @@ export async function listerPublications(): Promise<Publication[]> {
   return (data ?? []).map((l) => ({
     id: l.id as string,
     auteurId: l.user_id as string,
-    auteurNom: (l.author_name as string) ?? "Etudiant",
+    auteurNom: (l.author_name as string) ?? "Étudiant",
     categorie: (l.category as string) ?? null,
     contenu: l.content as string,
     creeLe: new Date(l.created_at as string),
@@ -156,7 +156,7 @@ export async function listerCommentaires(
   return (data ?? []).map((l) => ({
     id: l.id as string,
     auteurId: l.user_id as string,
-    auteurNom: (l.author_name as string) ?? "Etudiant",
+    auteurNom: (l.author_name as string) ?? "Étudiant",
     contenu: l.content as string,
     creeLe: new Date(l.created_at as string),
     cestMoi: (l.user_id as string) === utilisateur,
@@ -244,7 +244,7 @@ export async function signaler(
   if (error) {
     // L'index d'unicite empeche de signaler deux fois la meme chose.
     if (String(error.message).includes("duplicate")) {
-      throw new Error("Tu as deja signale ce contenu.");
+      throw new Error("Tu as déjà signalé ce contenu.");
     }
     throw error;
   }
@@ -253,7 +253,7 @@ export async function signaler(
 /** "il y a 3 h", "hier", "le 12 septembre" */
 export function depuis(date: Date): string {
   const minutes = Math.round((Date.now() - date.getTime()) / 60000);
-  if (minutes < 1) return "a l'instant";
+  if (minutes < 1) return "à l'instant";
   if (minutes < 60) return "il y a " + minutes + " min";
   const heures = Math.round(minutes / 60);
   if (heures < 24) return "il y a " + heures + " h";

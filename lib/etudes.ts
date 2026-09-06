@@ -204,7 +204,7 @@ export function moyenneParMatiere(
 ): { matiere: string; moyenne: number; nombre: number }[] {
   const groupes = new Map<string, Note[]>();
   for (const n of notes) {
-    const cle = n.matiere ?? "Sans matiere";
+    const cle = n.matiere ?? "Sans matière";
     groupes.set(cle, [...(groupes.get(cle) ?? []), n]);
   }
   return [...groupes.entries()]

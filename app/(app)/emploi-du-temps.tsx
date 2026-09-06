@@ -84,7 +84,7 @@ export default function EmploiDuTemps() {
     try {
       const source = await ajouterSourceLien(lien, libelle);
       const nombre = await synchroniser(source);
-      setInfo(nombre + " seances importees.");
+      setInfo(nombre + " séances importées.");
       setLien("");
       setLibelle("");
       setFormOuvert(false);
@@ -103,7 +103,7 @@ export default function EmploiDuTemps() {
     setInfo(null);
     try {
       const nombre = await synchroniser(source);
-      setInfo(nombre + " seances a jour.");
+      setInfo(nombre + " séances à jour.");
       await charger();
     } catch (e) {
       setErreur(messageErreur(e));
@@ -152,9 +152,9 @@ export default function EmploiDuTemps() {
             <View style={s.explication}>
               <Text style={s.explicationTitre}>Colle le lien de ton agenda</Text>
               <Text style={s.explicationTexte}>
-                Ton universite publie deja ton emploi du temps sous forme de lien
-                a synchroniser, depuis ADE ou Celcat. Cherche
-                &quot;exporter mon agenda&quot; sur ton espace numerique, copie le
+                Ton université publie déjà ton emploi du temps sous forme de lien
+                à synchroniser, depuis ADE ou Celcat. Cherche
+                &quot;exporter mon agenda&quot; sur ton espace numérique, copie le
                 lien qui se termine par .ics, et colle-le ici. Ta semaine se
                 remplit toute seule.
               </Text>
@@ -173,7 +173,7 @@ export default function EmploiDuTemps() {
                         day: "numeric",
                         month: "short",
                       })
-                    : " · jamais synchronise"}
+                    : " · jamais synchronisé"}
                 </Text>
                 {!!source.dernierStatut && source.dernierStatut !== "ok" && (
                   <Text style={s.sourceErreur}>{source.dernierStatut}</Text>
@@ -185,7 +185,7 @@ export default function EmploiDuTemps() {
                 onLongPress={() => retirer(source.id)}
                 disabled={enCours}
               >
-                <Text style={s.boutonSecondaireTexte}>Mettre a jour</Text>
+                <Text style={s.boutonSecondaireTexte}>Mettre à jour</Text>
               </Pressable>
             </View>
           ))}
@@ -258,7 +258,7 @@ export default function EmploiDuTemps() {
               onPress={() => setDecalageSemaine((n) => n - 1)}
               disabled={enCours}
             >
-              <Text style={s.flecheTexte}>Semaine precedente</Text>
+              <Text style={s.flecheTexte}>Semaine précédente</Text>
             </Pressable>
             {decalageSemaine !== 0 && (
               <Pressable style={s.fleche} onPress={() => setDecalageSemaine(0)}>
@@ -278,9 +278,9 @@ export default function EmploiDuTemps() {
             <ActivityIndicator style={s.attente} size="large" color={Colors.prive.base} />
           ) : parJour.length === 0 ? (
             <View style={s.vide}>
-              <Text style={s.videTitre}>Aucune seance cette semaine</Text>
+              <Text style={s.videTitre}>Aucune séance cette semaine</Text>
               <Text style={s.videTexte}>
-                Soit l&apos;agenda n&apos;est pas encore importe, soit la semaine
+                Soit l&apos;agenda n&apos;est pas encore importé, soit la semaine
                 est vraiment vide. Les vacances existent.
               </Text>
             </View>
@@ -311,8 +311,8 @@ export default function EmploiDuTemps() {
 
           {sources.length > 0 && (
             <Text style={s.astuce}>
-              Appui long sur &quot;Mettre a jour&quot; pour supprimer un agenda et
-              toutes ses seances.
+              Appui long sur &quot;Mettre à jour&quot; pour supprimer un agenda et
+              toutes ses séances.
             </Text>
           )}
         </ScrollView>

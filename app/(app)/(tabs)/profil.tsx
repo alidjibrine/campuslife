@@ -18,6 +18,7 @@ import {
   supprimerMonCompte,
   type Stockage,
 } from "@/lib/compte";
+import { suisJeModerateur } from "@/lib/moderation";
 import { LISTE_DOCUMENTS } from "@/constants/textes-legaux";
 import { Colors, Espacements, Rayons } from "@/constants/theme";
 
@@ -27,6 +28,7 @@ export default function Profil() {
   const router = useRouter();
   const [profil, setProfil] = useState<TypeProfil | null>(null);
   const [espace, setEspace] = useState<Stockage | null>(null);
+  const [moderateur, setModerateur] = useState(false);
   const [chargement, setChargement] = useState(true);
   const [suppression, setSuppression] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -34,11 +36,16 @@ export default function Profil() {
   useFocusEffect(
     useCallback(() => {
       let monte = true;
-      Promise.all([getMonProfil(), stockage().catch(() => null)])
-        .then(([p, e]) => {
+      Promise.all([
+        getMonProfil(),
+        stockage().catch(() => null),
+        suisJeModerateur().catch(() => false),
+      ])
+        .then(([p, e, m]) => {
           if (!monte) return;
           setProfil(p);
           setEspace(e);
+          setModerateur(m);
         })
         .catch(() => monte && setProfil(null))
         .finally(() => monte && setChargement(false));
@@ -49,9 +56,9 @@ export default function Profil() {
   );
 
   function confirmerDeconnexion() {
-    Alert.alert("Se deconnecter", "Tu devras retaper ton mot de passe.", [
+    Alert.alert("Se déconnecter", "Tu devras retaper ton mot de passe.", [
       { text: "Annuler", style: "cancel" },
-      { text: "Se deconnecter", style: "destructive", onPress: deconnexion },
+      { text: "Se déconnecter", style: "destructive", onPress: deconnexion },
     ]);
   }
 
@@ -62,16 +69,16 @@ export default function Profil() {
   function confirmerSuppression() {
     Alert.alert(
       "Supprimer mon compte",
-      "Tout disparait definitivement : tes cours, devoirs, notes, ton emploi du temps, tes publications, et tes conversations privees, y compris les messages de tes interlocuteurs. Il n'y a pas de retour en arriere.",
+      "Tout disparaît définitivement : tes cours, devoirs, notes, ton emploi du temps, tes publications, et tes conversations privées, y compris les messages de tes interlocuteurs. Il n'y a pas de retour en arrière.",
       [
         { text: "Annuler", style: "cancel" },
         {
           text: "Continuer",
           style: "destructive",
           onPress: () =>
-            Alert.alert("Confirmer", "Derniere verification. On y va ?", [
+            Alert.alert("Confirmer", "Dernière vérification. On y va ?", [
               { text: "Non", style: "cancel" },
-              { text: "Supprimer definitivement", style: "destructive", onPress: supprimer },
+              { text: "Supprimer définitivement", style: "destructive", onPress: supprimer },
             ]),
         },
       ],
@@ -118,18 +125,18 @@ export default function Profil() {
 
         <View style={s.bloc}>
           <View style={s.champ}>
-            <Text style={s.champLabel}>Etablissement</Text>
+            <Text style={s.champLabel}>Établissement</Text>
             <Text style={s.champValeur}>
-              {profil?.ecole?.nom ?? "Non rattache"}
+              {profil?.ecole?.nom ?? "Non rattaché"}
             </Text>
           </View>
           <View style={s.champ}>
-            <Text style={s.champLabel}>Annee</Text>
-            <Text style={s.champValeur}>{profil?.anneeEtude ?? "Non renseignee"}</Text>
+            <Text style={s.champLabel}>Année</Text>
+            <Text style={s.champValeur}>{profil?.anneeEtude ?? "Non renseignée"}</Text>
           </View>
           <View style={s.champ}>
-            <Text style={s.champLabel}>Filiere</Text>
-            <Text style={s.champValeur}>{profil?.filiere ?? "Non renseignee"}</Text>
+            <Text style={s.champLabel}>Filière</Text>
+            <Text style={s.champValeur}>{profil?.filiere ?? "Non renseignée"}</Text>
           </View>
           <View style={[s.champ, s.dernier]}>
             <Text style={s.champLabel}>Stockage</Text>
@@ -157,6 +164,15 @@ export default function Profil() {
           <Text style={s.actionTexte}>Modifier mes informations</Text>
         </Pressable>
 
+        {moderateur && (
+          <Pressable
+            style={s.action}
+            onPress={() => router.push("/moderation" as Href)}
+          >
+            <Text style={s.actionTexte}>Modération</Text>
+          </Pressable>
+        )}
+
         <Text style={s.rubrique}>Le cadre</Text>
         <View style={s.bloc}>
           {LISTE_DOCUMENTS.map((d, i) => (
@@ -173,7 +189,7 @@ export default function Profil() {
         {!!erreur && <Text style={s.erreur}>{erreur}</Text>}
 
         <Pressable style={[s.action, s.sortie]} onPress={confirmerDeconnexion}>
-          <Text style={[s.actionTexte, s.sortieTexte]}>Me deconnecter</Text>
+          <Text style={[s.actionTexte, s.sortieTexte]}>Me déconnecter</Text>
         </Pressable>
 
         <Pressable
@@ -186,7 +202,7 @@ export default function Profil() {
           </Text>
         </Pressable>
 
-        <Text style={s.version}>CampusLife, version de developpement</Text>
+        <Text style={s.version}>CampusLife, version de développement</Text>
       </ScrollView>
     </SafeAreaView>
   );

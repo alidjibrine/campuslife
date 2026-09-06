@@ -124,7 +124,7 @@ export default function EcranNotes() {
           <Text style={s.titre}>Mes notes</Text>
 
           <View style={s.moyenneBloc}>
-            <Text style={s.moyenneLabel}>Moyenne generale</Text>
+            <Text style={s.moyenneLabel}>Moyenne générale</Text>
             <Text style={s.moyenneValeur}>
               {generale === null ? "--" : generale.toFixed(2).replace(".", ",")}
               <Text style={s.moyenneSur}> / 20</Text>
@@ -132,7 +132,7 @@ export default function EcranNotes() {
             <Text style={s.moyenneDetail}>
               {notes.length === 0
                 ? "Aucune note saisie"
-                : notes.length + (notes.length > 1 ? " notes, ponderees" : " note")}
+                : notes.length + (notes.length > 1 ? " notes, pondérées" : " note")}
             </Text>
           </View>
 
@@ -144,7 +144,7 @@ export default function EcranNotes() {
 
           {formOuvert && (
             <View style={s.form}>
-              <Text style={s.label}>Intitule</Text>
+              <Text style={s.label}>Intitulé</Text>
               <TextInput
                 style={s.champ}
                 value={intitule}
@@ -154,7 +154,7 @@ export default function EcranNotes() {
                 editable={!enCours}
               />
 
-              <Text style={[s.label, s.espace]}>Matiere</Text>
+              <Text style={[s.label, s.espace]}>Matière</Text>
               <TextInput
                 style={s.champ}
                 value={matiere}
@@ -203,7 +203,7 @@ export default function EcranNotes() {
                   ? "Soit " +
                     ((valeurNum / baremeNum) * 20).toFixed(2).replace(".", ",") +
                     " sur 20."
-                  : "La note doit etre comprise entre 0 et le bareme."}
+                  : "La note doit être comprise entre 0 et le barème."}
               </Text>
 
               <View style={s.actions}>
@@ -237,7 +237,7 @@ export default function EcranNotes() {
             <View style={s.vide}>
               <Text style={s.videTitre}>Aucune note</Text>
               <Text style={s.videTexte}>
-                Saisis tes notes au fur et a mesure, la moyenne se calcule toute
+                Saisis tes notes au fur et à mesure, la moyenne se calcule toute
                 seule, coefficients compris.
               </Text>
             </View>
@@ -245,7 +245,7 @@ export default function EcranNotes() {
             <>
               {parMatiere.length > 1 && (
                 <>
-                  <Text style={s.section}>Par matiere</Text>
+                  <Text style={s.section}>Par matière</Text>
                   <View style={s.liste}>
                     {parMatiere.map((m) => (
                       <View key={m.matiere} style={s.ligneMatiere}>

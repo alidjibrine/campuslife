@@ -59,7 +59,7 @@ export default function Etudes() {
       titre: "Mon emploi du temps",
       detail:
         seancesImportees > 0
-          ? seancesImportees + " seances importees"
+          ? seancesImportees + " séances importées"
           : "Colle le lien de ton agenda universitaire",
     },
     {
@@ -68,14 +68,14 @@ export default function Etudes() {
       titre: "Mes devoirs",
       detail:
         devoirs > 0
-          ? devoirs + (devoirs > 1 ? " devoirs a rendre" : " devoir a rendre")
-          : "Rien a rendre",
+          ? devoirs + (devoirs > 1 ? " devoirs à rendre" : " devoir à rendre")
+          : "Rien à rendre",
     },
     {
       route: "/cours" as const,
       icone: "school-outline" as const,
       titre: "Mes cours",
-      detail: cours > 0 ? cours + " creneaux dans ma semaine" : "Aucun cours saisi",
+      detail: cours > 0 ? cours + " créneaux dans ma semaine" : "Aucun cours saisi",
     },
     {
       route: "/notes" as const,
@@ -91,10 +91,10 @@ export default function Etudes() {
   return (
     <SafeAreaView style={s.page}>
       <ScrollView contentContainerStyle={s.contenu}>
-        <Text style={s.titre}>Etudes</Text>
+        <Text style={s.titre}>Études</Text>
         <Text style={s.accroche}>
-          Ton espace prive. Personne d&apos;autre n&apos;y a acces, pas meme les
-          autres etudiants de ton ecole.
+          Ton espace privé. Personne d&apos;autre n&apos;y a accès, pas même les
+          autres étudiants de ton école.
         </Text>
 
         {chargement && (
@@ -125,8 +125,8 @@ export default function Etudes() {
         <View style={s.aVenir}>
           <Text style={s.aVenirTitre}>Plus tard</Text>
           <Text style={s.aVenirTexte}>
-            Budget, Documents et Memo font partie du projet mais attendent leur
-            tour, apres la mise en ligne. C&apos;est ecrit dans le programme.
+            Budget, Documents et Mémo font partie du projet mais attendent leur
+            tour, après la mise en ligne. C&apos;est écrit dans le programme.
           </Text>
         </View>
       </ScrollView>

@@ -168,19 +168,19 @@ export function messageErreur(erreur: unknown): string {
     return "E-mail ou mot de passe incorrect.";
   }
   if (m.includes("already registered")) {
-    return "Un compte existe deja avec cette adresse. Connecte-toi.";
+    return "Un compte existe déjà avec cette adresse. Connecte-toi.";
   }
   if (m.includes("password should be at least")) {
-    return "Le mot de passe doit faire au moins 6 caracteres.";
+    return "Le mot de passe doit faire au moins 6 caractères.";
   }
   if (m.includes("unable to validate email") || m.includes("invalid email")) {
     return "Cette adresse e-mail n'est pas valide.";
   }
   if (m.includes("email not confirmed")) {
-    return "Ton adresse n'est pas encore confirmee. Regarde ta boite mail.";
+    return "Ton adresse n'est pas encore confirmée. Regarde ta boîte mail.";
   }
   if (m.includes("network") || m.includes("fetch")) {
-    return "Pas de reseau. Verifie ta connexion et reessaie.";
+    return "Pas de réseau. Vérifie ta connexion et réessaie.";
   }
   return brut;
 }

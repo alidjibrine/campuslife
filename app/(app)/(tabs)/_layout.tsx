@@ -37,7 +37,7 @@ export default function OngletsLayout() {
       <Tabs.Screen
         name="etudes"
         options={{
-          title: "Etudes",
+          title: "Études",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="book-outline" size={size} color={color} />
           ),
@@ -46,7 +46,7 @@ export default function OngletsLayout() {
       <Tabs.Screen
         name="communaute"
         options={{
-          title: "Communaute",
+          title: "Communauté",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-outline" size={size} color={color} />
           ),

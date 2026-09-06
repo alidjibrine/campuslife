@@ -141,14 +141,22 @@ recliquer sur "mettre a jour" ne cree pas de doublon.
       `post_likes`, filtres sur `my_school_id()`
 - [x] Migration 004 appliquee : table `reports`, et abonnements filtres par ecole
       des deux cotes (on ne suit qu'un membre de sa propre ecole)
-- [ ] Ecran Sujets : fil de l'etablissement, categories, publication
-- [ ] Ecran Sujet : reponses, ordre chronologique
-- [ ] Ecran Membres : annuaire de l'ecole, suivre et ne plus suivre
-- [ ] Bouton Signaler sur chaque sujet et chaque reponse
-- [ ] Page publique des regles de la communaute, ecrite avant la mise en ligne
+- [x] Fil de l'etablissement : quatre categories, publication, j'aime,
+      rafraichissement par glissement, suppression de mes propres publications
+- [x] Ecran d'un sujet : reponses en ordre chronologique, zone de reponse
+- [x] Annuaire des membres de l'ecole, avec recherche, suivre et ne plus suivre
+- [x] Signaler une publication ou une reponse, cinq motifs, un seul signalement
+      par contenu et par personne
+- [ ] Page des regles de la communaute, ecrite avant la mise en ligne (lot 7)
 
 **Verification obligatoire :** creer deux comptes de deux ecoles differentes et
 confirmer que l'un ne voit rien de l'autre. Aucun raccourci sur ce test.
+
+> **6 septembre 2026, test passe.** Realise directement en base, avec deux vrais
+> comptes dans deux ecoles differentes, sous les regles d'acces reelles :
+> l'etudiant de Strasbourg voit les 3 publications, celui de l'autre ecole en voit
+> 0 et ne voit qu'un seul membre, lui-meme, et un compte sans ecole ne voit rien.
+> Transaction annulee, la base est inchangee. Reste le test a deux telephones.
 
 **Fini quand :** deux comptes de la meme ecole se voient et discutent, deux comptes
 d'ecoles differentes sont invisibles l'un pour l'autre.

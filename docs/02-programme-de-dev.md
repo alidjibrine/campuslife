@@ -22,7 +22,7 @@ Les durees sont des soirees de 2 a 3 heures, ce sont des ordres de grandeur.
 - [x] `npm install` et montee du projet en SDK 57 (`npx expo install --fix`)
 - [x] Compte Expo `alidjibrine` connecte cote terminal et cote Expo Go
 - [x] L'ecran provisoire s'affiche sur l'iPhone
-- [ ] `git commit`, creation du depot GitHub `campuslife`, puis `git push`
+- [x] Premier commit `e5c1a77` (23 fichiers) pousse sur github.com/alidjibrine/campuslife
 
 ```
 cd C:\Users\adoum\Dev\campuslife
@@ -36,7 +36,7 @@ commit est pousse.
 > **6 septembre 2026, 14 h.** L'app tourne sur l'iPhone. Deux surprises au
 > passage : le projet etait ne en SDK 54 alors qu'Expo Go est passe en 57, et
 > le SDK 57 impose desormais d'etre connecte au meme compte Expo des deux cotes.
-> Les deux sont regles. Il ne reste que le commit.
+> Les deux sont regles. **Lot 0 termine a 14 h 20, commit `e5c1a77` pousse.**
 
 ---
 

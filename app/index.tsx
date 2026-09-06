@@ -20,7 +20,7 @@ type Lot = {
 };
 
 const LOTS: Lot[] = [
-  { numero: "0", titre: "Mise en place", detail: "Le projet tourne sur l'iPhone", zone: "socle", fait: false },
+  { numero: "0", titre: "Mise en place", detail: "Le projet tourne sur l'iPhone", zone: "socle", fait: true },
   { numero: "1", titre: "Compte et etablissement", detail: "Inscription par e-mail universitaire", zone: "socle", fait: false },
   { numero: "2", titre: "Etudes, saisie a la main", detail: "Cours, devoirs, notes", zone: "prive", fait: false },
   { numero: "3", titre: "Import de l'emploi du temps", detail: "Lien d'agenda ou fichier .ics", zone: "prive", fait: false },

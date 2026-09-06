@@ -1,21 +1,26 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 /**
  * Layout racine de CampusLife.
  *
- * Volontairement nu pour l'instant. Le AuthProvider et les deux groupes
- * (auth) et (app) arrivent au lot 1.
- *
- * Le SafeAreaProvider est indispensable des maintenant : sans lui, les
- * ecrans qui utilisent SafeAreaView plantent au demarrage.
+ * Enveloppe toute l'app dans le AuthProvider et declare les deux groupes :
+ *   (auth) : ecrans hors connexion
+ *   (app)  : ecrans reserves aux connectes
+ * L'aiguillage entre les deux se fait dans les layouts de chaque groupe.
  */
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }} />
-      <StatusBar style="dark" />
+      <AuthProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(app)" />
+        </Stack>
+        <StatusBar style="dark" />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

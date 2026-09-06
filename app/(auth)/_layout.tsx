@@ -1,14 +1,10 @@
-import { Redirect } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { Colors } from "@/constants/theme";
 
-/**
- * Point d'entree de CampusLife.
- *
- * Attend de savoir s'il y a une session, puis envoie vers le bon groupe.
- */
-export default function Entree() {
+/** Ecrans hors connexion. Un etudiant deja connecte n'a rien a y faire. */
+export default function AuthLayout() {
   const { session, chargement } = useAuth();
 
   if (chargement) {
@@ -19,7 +15,18 @@ export default function Entree() {
     );
   }
 
-  return session ? <Redirect href="/qg" /> : <Redirect href="/(auth)/login" />;
+  if (session) {
+    return <Redirect href="/qg" />;
+  }
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: Colors.neutre.fond },
+      }}
+    />
+  );
 }
 
 const s = StyleSheet.create({

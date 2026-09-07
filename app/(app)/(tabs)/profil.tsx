@@ -1,6 +1,14 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Ecran from "@/components/Ecran";
 import Entete from "@/components/Entete";
@@ -13,6 +21,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getMonProfil, messageErreur, type Profil as TypeProfil } from "@/lib/api";
 import { formaterOctets, stockage, supprimerMonCompte, type Stockage } from "@/lib/compte";
 import { choisirEtTeleverserAvatar, retirerAvatar } from "@/lib/avatar";
+import {
+  activerNotifications,
+  appareilCompatible,
+  desactiverNotifications,
+  notificationsActives,
+} from "@/lib/notifications";
 import { suisJeModerateur } from "@/lib/moderation";
 import { LISTE_DOCUMENTS } from "@/constants/textes-legaux";
 import { Colors, Espacements, PRESSION, Rayons, Typo } from "@/constants/theme";
@@ -27,18 +41,22 @@ export default function Profil() {
   const [chargement, setChargement] = useState(true);
   const [suppression, setSuppression] = useState(false);
   const [photoEnCours, setPhotoEnCours] = useState(false);
+  const [notifs, setNotifs] = useState(false);
+  const [notifsEnCours, setNotifsEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
     try {
-      const [p, e, m] = await Promise.all([
+      const [p, e, m, n] = await Promise.all([
         getMonProfil(),
         stockage().catch(() => null),
         suisJeModerateur().catch(() => false),
+        notificationsActives().catch(() => false),
       ]);
       setProfil(p);
       setEspace(e);
       setModerateur(m);
+      setNotifs(n);
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
@@ -95,6 +113,26 @@ export default function Profil() {
       setErreur(messageErreur(e));
     } finally {
       setPhotoEnCours(false);
+    }
+  }
+
+  async function basculerNotifications(valeur: boolean) {
+    setNotifsEnCours(true);
+    setErreur(null);
+    // On bascule tout de suite pour que l'interrupteur reponde, et on revient
+    // en arriere si l'operation echoue.
+    setNotifs(valeur);
+    try {
+      if (valeur) {
+        await activerNotifications();
+      } else {
+        await desactiverNotifications();
+      }
+    } catch (e) {
+      setNotifs(!valeur);
+      setErreur(messageErreur(e));
+    } finally {
+      setNotifsEnCours(false);
     }
   }
 
@@ -256,6 +294,32 @@ export default function Profil() {
         </Section>
       )}
 
+      <Section titre="Notifications">
+        <Carte>
+          <View style={s.interrupteur}>
+            <View style={s.flex}>
+              <Text style={Typo.corpsFort}>Messages privés</Text>
+              <Text style={[Typo.petit, s.interrupteurAide]}>
+                {appareilCompatible()
+                  ? "Être prévenu sur cet appareil quand quelqu'un t'écrit."
+                  : "Indisponible dans Expo Go. Il faut un build de développement."}
+              </Text>
+            </View>
+            {notifsEnCours ? (
+              <ActivityIndicator size="small" color={Colors.prive.base} />
+            ) : (
+              <Switch
+                value={notifs}
+                onValueChange={basculerNotifications}
+                disabled={!appareilCompatible()}
+                trackColor={{ false: Colors.neutre.trait, true: Colors.prive.surligne }}
+                thumbColor={notifs ? Colors.prive.base : Colors.neutre.surface}
+              />
+            )}
+          </View>
+        </Carte>
+      </Section>
+
       <Section titre="Le cadre">
         <Carte>
           {LISTE_DOCUMENTS.map((d, i) => (
@@ -334,6 +398,8 @@ const s = StyleSheet.create({
   fait: { paddingVertical: Espacements.sm + 2 },
   faitTrait: { borderBottomWidth: 1, borderBottomColor: Colors.neutre.traitDoux },
   faitValeur: { marginTop: 3, color: Colors.neutre.encre },
+  interrupteur: { flexDirection: "row", alignItems: "center", gap: Espacements.md },
+  interrupteurAide: { marginTop: 3 },
   stockageHaut: {
     flexDirection: "row",
     alignItems: "baseline",

@@ -1,3 +1,5 @@
+import * as DocumentPicker from "expo-document-picker";
+import { File } from "expo-file-system";
 import { supabase } from "@/lib/supabase";
 import { analyserIcs, normaliserUrl } from "@/lib/ics";
 
@@ -76,6 +78,62 @@ export async function ajouterSourceLien(
     dernierStatut: null,
     nombreSeances: 0,
   };
+}
+
+/**
+ * Import d'un fichier .ics depose a la main.
+ *
+ * Toutes les universites ne publient pas un lien a synchroniser : certaines ne
+ * proposent qu'un telechargement. Le fichier n'etant pas rejoue plus tard, la
+ * source garde le type « fichier » et le bouton « mettre a jour » ne s'affiche
+ * pas pour elle : il faudra redeposer un fichier.
+ */
+export async function choisirFichierIcs(): Promise<{ nom: string; contenu: string } | null> {
+  const choix = await DocumentPicker.getDocumentAsync({
+    type: ["text/calendar", "application/octet-stream", "*/*"],
+    copyToCacheDirectory: true,
+    multiple: false,
+  });
+  if (choix.canceled || !choix.assets || choix.assets.length === 0) return null;
+
+  const fichier = choix.assets[0];
+  const contenu = await new File(fichier.uri).text();
+  if (!contenu.includes("BEGIN:VCALENDAR")) {
+    throw new Error(
+      "Ce fichier n'est pas un agenda au format .ics. Cherche un fichier qui se termine par .ics dans ton espace numerique.",
+    );
+  }
+  return { nom: fichier.name || "Mon emploi du temps", contenu };
+}
+
+export async function ajouterSourceFichier(
+  libelle: string,
+  contenu: string,
+): Promise<{ source: SourceAgenda; nombre: number }> {
+  const { data, error } = await supabase
+    .from("timetable_sources")
+    .insert({
+      user_id: await idUtilisateur(),
+      label: libelle.trim() || "Mon emploi du temps",
+      kind: "file",
+      url: null,
+    })
+    .select("id, label, kind, url, last_sync_at, last_status, events_count")
+    .single();
+  if (error) throw error;
+
+  const source: SourceAgenda = {
+    id: data.id as string,
+    libelle: data.label as string,
+    type: "fichier",
+    url: null,
+    derniereSynchro: null,
+    dernierStatut: null,
+    nombreSeances: 0,
+  };
+
+  const nombre = await remplacerSeances(source.id, contenu);
+  return { source, nombre };
 }
 
 export async function supprimerSource(id: string): Promise<void> {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Redirect, Stack, usePathname, type Href } from "expo-router";
+import { Redirect, Stack, usePathname, useRouter, type Href } from "expo-router";
+import * as Notifications from "expo-notifications";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMonProfil, type Profil } from "@/lib/api";
@@ -20,6 +21,7 @@ import { Colors } from "@/constants/theme";
 export default function AppLayout() {
   const { session, chargement: chargementAuth, modeRecuperation } = useAuth();
   const chemin = usePathname();
+  const router = useRouter();
   const [profil, setProfil] = useState<Profil | null>(null);
   const [profilCharge, setProfilCharge] = useState(false);
 
@@ -32,6 +34,20 @@ export default function AppLayout() {
       setProfilCharge(true);
     }
   }, []);
+
+  // Toucher une notification ouvre la conversation concernee. Sans ca, elle
+  // ouvre l'app sur le QG et l'etudiant doit retrouver le message lui-meme.
+  useEffect(() => {
+    const ecoute = Notifications.addNotificationResponseReceivedListener((reponse) => {
+      const donnees = reponse.notification.request.content.data as
+        | { conversation_id?: string }
+        | undefined;
+      if (donnees?.conversation_id) {
+        router.push(("/conversation/" + donnees.conversation_id) as Href);
+      }
+    });
+    return () => ecoute.remove();
+  }, [router]);
 
   useEffect(() => {
     if (!session) {
@@ -80,6 +96,7 @@ export default function AppLayout() {
       <Stack.Screen name="cours" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="devoirs" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="notes" options={{ animation: "slide_from_right" }} />
+      <Stack.Screen name="budget" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="emploi-du-temps" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="membres" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="sujet/[id]" options={{ animation: "slide_from_right" }} />

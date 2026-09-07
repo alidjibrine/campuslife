@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Ecran from "@/components/Ecran";
 import Entete from "@/components/Entete";
@@ -16,6 +16,7 @@ import {
   formaterDate,
   joursRestants,
   listerDevoirs,
+  modifierDevoir,
   supprimerDevoir,
   type Devoir,
 } from "@/lib/etudes";
@@ -36,6 +37,7 @@ export default function Devoirs() {
   const [chargement, setChargement] = useState(true);
   const [rafraichit, setRafraichit] = useState(false);
   const [formOuvert, setFormOuvert] = useState(false);
+  const [enEdition, setEnEdition] = useState<string | null>(null);
   const [titre, setTitre] = useState("");
   const [matiere, setMatiere] = useState("");
   const [echeance, setEcheance] = useState("");
@@ -78,21 +80,51 @@ export default function Devoirs() {
   const echeanceInvalide = echeance.trim().length > 0 && echeanceIso === null;
   const peutValider = titre.trim().length > 1 && !echeanceInvalide && !enCours;
 
-  async function ajouter() {
+  function fermerForm() {
+    setFormOuvert(false);
+    setEnEdition(null);
+    setTitre("");
+    setMatiere("");
+    setEcheance("");
+  }
+
+  /** Ouvre le meme formulaire, prerempli. L'echeance repasse en jour/mois. */
+  function ouvrirModification(d: Devoir) {
+    setEnEdition(d.id);
+    setTitre(d.titre);
+    setMatiere(d.matiere ?? "");
+    setEcheance(
+      d.echeance ? d.echeance.slice(8, 10) + "/" + d.echeance.slice(5, 7) : "",
+    );
+    setFormOuvert(true);
+  }
+
+  async function enregistrer() {
     if (!peutValider) return;
     setEnCours(true);
     try {
-      await creerDevoir({ titre, matiere: matiere || null, echeance: echeanceIso });
-      setTitre("");
-      setMatiere("");
-      setEcheance("");
-      setFormOuvert(false);
+      const champs = { titre, matiere: matiere || null, echeance: echeanceIso };
+      if (enEdition) {
+        await modifierDevoir(enEdition, champs);
+      } else {
+        await creerDevoir(champs);
+      }
+      fermerForm();
       await charger();
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
       setEnCours(false);
     }
+  }
+
+  function menu(d: Devoir) {
+    Alert.alert(d.titre, undefined, [
+      { text: "Modifier", onPress: () => ouvrirModification(d) },
+      { text: d.fait ? "Marquer a faire" : "Marquer comme fait", onPress: () => cocher(d) },
+      { text: "Supprimer", style: "destructive", onPress: () => supprimer(d.id) },
+      { text: "Annuler", style: "cancel" },
+    ]);
   }
 
   async function cocher(d: Devoir) {
@@ -140,11 +172,7 @@ export default function Devoirs() {
           {d.fait && <Ionicons name="checkmark" size={15} color={Colors.neutre.blanc} />}
         </Pressable>
 
-        <Pressable
-          style={s.flex}
-          onLongPress={() => supprimer(d.id)}
-          onPress={() => cocher(d)}
-        >
+        <Pressable style={s.flex} onLongPress={() => menu(d)} onPress={() => cocher(d)}>
           <Text style={[Typo.corpsFort, d.fait && s.fait]} numberOfLines={2}>
             {d.titre}
           </Text>
@@ -198,7 +226,10 @@ export default function Devoirs() {
                 titre="Ajouter"
                 taille="sm"
                 icone="add"
-                onPress={() => setFormOuvert(true)}
+                onPress={() => {
+                  setEnEdition(null);
+                  setFormOuvert(true);
+                }}
               />
             ) : undefined
           }
@@ -239,13 +270,13 @@ export default function Devoirs() {
               titre="Annuler"
               variante="discret"
               taille="sm"
-              onPress={() => setFormOuvert(false)}
+              onPress={fermerForm}
               desactive={enCours}
             />
             <Bouton
-              titre="Ajouter"
+              titre={enEdition ? "Enregistrer" : "Ajouter"}
               taille="sm"
-              onPress={ajouter}
+              onPress={enregistrer}
               enCours={enCours}
               desactive={!peutValider}
             />
@@ -258,7 +289,16 @@ export default function Devoirs() {
           icone="checkbox-outline"
           titre="Aucun devoir en attente"
           texte="Ajoute ce que tu dois rendre, tu le retrouveras sur ton QG le matin."
-          action={<Bouton titre="Ajouter un devoir" icone="add" onPress={() => setFormOuvert(true)} />}
+          action={
+            <Bouton
+              titre="Ajouter un devoir"
+              icone="add"
+              onPress={() => {
+                setEnEdition(null);
+                setFormOuvert(true);
+              }}
+            />
+          }
         />
       ) : (
         <>
@@ -273,7 +313,7 @@ export default function Devoirs() {
             </Section>
           )}
           <Text style={[Typo.petit, s.astuce]}>
-            Touche un devoir pour le cocher. Appui long pour le supprimer.
+            Touche un devoir pour le cocher. Appui long pour le modifier ou le supprimer.
           </Text>
         </>
       )}

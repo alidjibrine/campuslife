@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { prevenirDunMessage } from "@/lib/notifications";
 
 /**
  * Les messages prives.
@@ -101,6 +102,12 @@ export async function envoyer(conversationId: string, contenu: string): Promise<
     .select("id, sender_id, content, created_at")
     .single();
   if (error) throw error;
+
+  // La notification part apres coup et sans bloquer : un message envoye ne
+  // doit jamais paraitre en echec parce que le serveur de notifications
+  // repond mal.
+  void prevenirDunMessage(conversationId);
+
   return versMessage(data as Record<string, unknown>, monId);
 }
 

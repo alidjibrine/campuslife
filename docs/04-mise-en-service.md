@@ -84,6 +84,30 @@ Deux choses a savoir sur les courriels :
 
 ---
 
+## 3 ter. Ce qu'il faut pour les notifications
+
+Trois conditions, dans cet ordre. Aucune ne se contourne.
+
+1. **`eas init`**, une seule fois. Il inscrit un identifiant de projet dans
+   `app.json`, sans lequel Expo ne sait pas a quelle application envoyer. Tant
+   qu'il manque, l'interrupteur du profil affiche un message clair au lieu
+   d'echouer en silence.
+2. **Un build de developpement.** Depuis le SDK 53, les notifications
+   distantes ne fonctionnent plus dans Expo Go. Sur Android :
+
+   ```powershell
+   eas build --platform android --profile development
+   ```
+
+3. **Sur iPhone seulement**, un compte Apple Developer payant : les
+   notifications passent par les serveurs d'Apple, qui exigent une cle de
+   l'equipe. EAS la genere tout seul lors du premier build iOS.
+
+La fonction serveur `notifier-message` est deja deployee sur le projet
+Supabase. Rien a faire de ce cote.
+
+---
+
 ## 4. Le chemin gratuit : Android d'abord
 
 Un build Android en distribution interne produit un fichier `.apk` que tu

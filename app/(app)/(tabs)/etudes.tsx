@@ -9,6 +9,7 @@ import Section from "@/components/Section";
 import Alerte from "@/components/Alerte";
 import { listerCours, listerDevoirs, listerNotes, moyenne } from "@/lib/etudes";
 import { listerSources } from "@/lib/agenda";
+import { formaterEuros, listerDepenses, lireReglages, totalDepense } from "@/lib/budget";
 import { messageErreur } from "@/lib/api";
 import { Colors, Espacements, Polices, Rayons, Typo } from "@/constants/theme";
 import type { Icone } from "@/components/Bouton";
@@ -28,17 +29,21 @@ export default function Etudes() {
   const [moyenneGenerale, setMoyenneGenerale] = useState<number | null>(null);
   const [nombreNotes, setNombreNotes] = useState(0);
   const [seancesImportees, setSeancesImportees] = useState(0);
+  const [budgetDepense, setBudgetDepense] = useState(0);
+  const [budgetMensuel, setBudgetMensuel] = useState<number | null>(null);
   const [chargement, setChargement] = useState(true);
   const [rafraichit, setRafraichit] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
     try {
-      const [d, c, n, sources] = await Promise.all([
+      const [d, c, n, sources, depenses, reglages] = await Promise.all([
         listerDevoirs(),
         listerCours(),
         listerNotes(),
         listerSources(),
+        listerDepenses(new Date()),
+        lireReglages(),
       ]);
       const aRendre = d.filter((x) => !x.fait);
       const aujourdhui = new Date().toISOString().slice(0, 10);
@@ -48,6 +53,8 @@ export default function Etudes() {
       setMoyenneGenerale(moyenne(n));
       setNombreNotes(n.length);
       setSeancesImportees(sources.reduce((total, s2) => total + s2.nombreSeances, 0));
+      setBudgetDepense(totalDepense(depenses));
+      setBudgetMensuel(reglages.budgetMensuel);
       setErreur(null);
     } catch (e) {
       setErreur(messageErreur(e));
@@ -102,6 +109,20 @@ export default function Etudes() {
       titre: "Mes cours",
       detail: cours > 0 ? "créneaux dans ma semaine" : "Aucun cours saisi",
       valeur: cours > 0 ? String(cours) : "—",
+    },
+    {
+      route: "/budget",
+      icone: "wallet",
+      titre: "Mon budget",
+      detail:
+        budgetMensuel !== null && budgetMensuel > 0
+          ? "dépensés sur " + formaterEuros(budgetMensuel) + " ce mois"
+          : budgetDepense > 0
+            ? "dépensés ce mois"
+            : "Rien de dépensé ce mois",
+      valeur: budgetDepense > 0 ? formaterEuros(budgetDepense) : "—",
+      alerte:
+        budgetMensuel !== null && budgetMensuel > 0 && budgetDepense > budgetMensuel,
     },
     {
       route: "/notes",
@@ -161,8 +182,8 @@ export default function Etudes() {
 
       <Alerte
         type="info"
-        titre="Budget, Documents et Mémo"
-        texte="Ils font partie du projet mais attendent leur tour, après la mise en ligne. C'est écrit dans le programme, pour ne pas y revenir chaque semaine."
+        titre="Documents et Mémo"
+        texte="Les deux derniers modules du projet attendent encore leur tour. C'est écrit dans le programme, pour ne pas y revenir chaque semaine."
       />
     </Ecran>
   );

@@ -11,7 +11,9 @@ import Section from "@/components/Section";
 import Alerte from "@/components/Alerte";
 import EtatVide from "@/components/EtatVide";
 import {
+  ajouterSourceFichier,
   ajouterSourceLien,
+  choisirFichierIcs,
   debutDeSemaine,
   formaterHeure,
   formaterJourLong,
@@ -99,6 +101,35 @@ export default function EmploiDuTemps() {
           // Tant pis, l'étudiant pourra la supprimer à la main.
         }
       }
+      await charger();
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  /**
+   * Import d'un fichier depose a la main.
+   *
+   * Toutes les universites ne publient pas un lien a synchroniser : certaines
+   * ne proposent qu'un telechargement. Une source de type fichier ne se
+   * resynchronise pas toute seule, il faudra redeposer un fichier a jour.
+   */
+  async function importerFichier() {
+    if (enCours) return;
+    setEnCours(true);
+    setErreur(null);
+    setInfo(null);
+    try {
+      const fichier = await choisirFichierIcs();
+      if (!fichier) return;
+      const { nombre } = await ajouterSourceFichier(libelle || fichier.nom, fichier.contenu);
+      setInfo(nombre + " séances importées depuis le fichier.");
+      setLien("");
+      setLibelle("");
+      setFormOuvert(false);
+      await charger();
+    } catch (e) {
+      setErreur(messageErreur(e));
       await charger();
     } finally {
       setEnCours(false);
@@ -323,6 +354,25 @@ export default function EmploiDuTemps() {
                 desactive={lien.trim().length < 8}
               />
             </View>
+
+            <View style={s.ou}>
+              <View style={s.ouTrait} />
+              <Text style={[Typo.petit, s.ouTexte]}>ou</Text>
+              <View style={s.ouTrait} />
+            </View>
+
+            <Bouton
+              titre="Déposer un fichier .ics"
+              variante="contour"
+              icone="document-attach-outline"
+              pleineLargeur
+              onPress={importerFichier}
+              desactive={enCours}
+            />
+            <Text style={[Typo.petit, s.aideFichier]}>
+              Si ton université ne propose qu&apos;un téléchargement plutôt
+              qu&apos;un lien. Le fichier ne se met pas à jour tout seul.
+            </Text>
           </Carte>
         )}
 
@@ -345,13 +395,15 @@ export default function EmploiDuTemps() {
                       : " · jamais synchronisé"}
                   </Text>
                 </View>
-                <Bouton
-                  titre="Mettre à jour"
-                  variante="contour"
-                  taille="sm"
-                  onPress={() => mettreAJour(source)}
-                  desactive={enCours}
-                />
+                {source.type === "lien" && (
+                  <Bouton
+                    titre="Mettre à jour"
+                    variante="contour"
+                    taille="sm"
+                    onPress={() => mettreAJour(source)}
+                    desactive={enCours}
+                  />
+                )}
                 <Pressable
                   onPress={() => confirmerRetrait(source)}
                   hitSlop={10}
@@ -410,6 +462,15 @@ const s = StyleSheet.create({
     backgroundColor: Colors.prive.surligne,
   },
   form: { padding: Espacements.lg },
+  ou: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Espacements.md,
+    marginVertical: Espacements.lg,
+  },
+  ouTrait: { flex: 1, height: 1, backgroundColor: Colors.neutre.trait },
+  ouTexte: { textTransform: "uppercase", letterSpacing: 1 },
+  aideFichier: { marginTop: Espacements.sm },
   espace: { marginTop: Espacements.md },
   actions: {
     flexDirection: "row",

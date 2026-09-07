@@ -49,6 +49,8 @@ supprimees de la base.
 - `013_declencheurs_hors_api` : retire le droit d'execution de toutes les
   fonctions de declencheur, en boucle plutot qu'une par une, pour que les
   prochaines soient couvertes sans qu'on y pense.
+- `014_notifications` : table `push_tokens`, un jeton par appareil, lisible
+  seulement par son proprietaire, et suppression de compte etendue.
 
 ## Etat au 6 septembre 2026
 

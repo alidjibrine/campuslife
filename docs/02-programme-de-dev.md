@@ -300,6 +300,74 @@ bloquant du premier build.
 
 ---
 
+## Lot 10 - Trois volets (7 septembre 2026)
+
+Choisi contre mon avis : je recommandais d'attendre les retours de dix
+testeurs avant de decider quoi construire. Ali a tranche pour les trois
+candidats a la fois. C'est son produit.
+
+### Volet A - Les manques du quotidien
+
+- [x] Modifier un devoir, une note, un cours, un mouvement de budget. Avant, on
+      ne pouvait que supprimer et retaper. Le meme formulaire sert aux deux :
+      un ecran de plus n'aurait rien apporte.
+- [x] Appui long sur une ligne : un menu Modifier / Supprimer, partout pareil.
+- [x] Import d'un fichier `.ics`, pour les universites qui ne publient qu'un
+      telechargement. Le contenu est verifie (`BEGIN:VCALENDAR`) avant d'etre
+      lu, et une source de type fichier n'affiche pas le bouton « mettre a
+      jour » : il n'y a pas de lien a rejouer.
+- [x] Tirer-pour-rafraichir sur les quatre ecrans qui n'en avaient pas.
+
+### Volet B - Notifications de message
+
+Architecture retenue, et pourquoi : **c'est l'app de l'expediteur qui declenche
+l'envoi**, juste apres le message. L'autre solution, un declencheur en base qui
+appelle la fonction serveur par `pg_net`, obligeait a stocker un secret dans la
+base pour s'authentifier aupres d'elle. Ce n'etait pas un bon echange : la
+contrepartie de ce choix est qu'un telephone coupe dans la seconde qui suit
+l'envoi ne declenche pas la notification. Le message, lui, est bien parti.
+
+- [x] Migration 014 : `push_tokens`, un jeton par appareil. Le jeton est unique,
+      donc un telephone qui change de compte bascule au lieu d'apparaitre deux
+      fois.
+- [x] Fonction serveur `notifier-message`, deployee. Deux precautions : elle lit
+      la conversation avec le jeton de l'appelant, donc les regles d'acces
+      verifient elles-memes qu'il en fait partie ; et **le texte de la
+      notification est relu en base, pas pris dans la requete**, sans quoi
+      n'importe qui pourrait faire afficher n'importe quoi sur le telephone
+      d'autrui.
+- [x] Menage automatique : un jeton qu'Expo signale comme desinstalle est
+      efface, sinon ils s'accumulent et on rappelle Expo pour rien a chaque
+      message.
+- [x] Interrupteur dans le profil, et ouverture de la bonne conversation quand
+      on touche la notification.
+
+**Ne se teste pas dans Expo Go** : depuis le SDK 53, les notifications
+distantes demandent un build de developpement. Le code le detecte et l'ecrit en
+clair dans le profil plutot que d'echouer sans explication.
+
+### Volet C - Budget
+
+Les tables `transactions` et `category_budgets` existaient depuis juin, avec
+leurs regles d'acces completes. Aucune migration n'a ete necessaire.
+
+- [x] Convention de signe posee une bonne fois : **un montant positif est une
+      depense, un negatif une rentree**. L'ecran ne fait jamais taper de signe
+      moins, deux puces suffisent.
+- [x] Navigation de mois, total depense avec jauge coloree par les seuils
+      d'alerte deja presents sur le profil depuis juin.
+- [x] Repartition par categorie, avec plafond par enveloppe et depassement
+      signale.
+- [x] Saisie, modification, suppression, et reglage du budget mensuel.
+- [x] Entree depuis Etudes, avec le total du mois en cours.
+
+**Verifie en base** (transactions annulees) : jetons de notification, 5
+verifications dont l'isolation entre deux comptes et l'effacement avec le
+compte ; budget, 11 verifications dont le total du mois, l'exclusion du mois
+precedent, les plafonds et le cloisonnement. **Zero echec sur 16.**
+
+---
+
 ### Verification de bout en bout, 7 septembre 2026
 
 Deux passes, l'une sur le contrat entre le code et la base, l'autre sur les

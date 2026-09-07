@@ -89,6 +89,29 @@ export async function creerCours(c: {
   if (error) throw error;
 }
 
+export async function modifierCours(
+  id: string,
+  c: {
+    intitule: string;
+    jour: number;
+    debut: string;
+    fin: string;
+    salle: string | null;
+  },
+): Promise<void> {
+  const { error } = await supabase
+    .from("courses")
+    .update({
+      title: c.intitule.trim(),
+      day: c.jour,
+      start_time: c.debut.trim(),
+      end_time: c.fin.trim(),
+      location: c.salle?.trim() || null,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function supprimerCours(id: string): Promise<void> {
   const { error } = await supabase.from("courses").delete().eq("id", id);
   if (error) throw error;
@@ -124,6 +147,21 @@ export async function creerDevoir(d: {
     due_date: d.echeance,
     done: false,
   });
+  if (error) throw error;
+}
+
+export async function modifierDevoir(
+  id: string,
+  d: { titre: string; matiere: string | null; echeance: string | null },
+): Promise<void> {
+  const { error } = await supabase
+    .from("assignments")
+    .update({
+      title: d.titre.trim(),
+      subject: d.matiere?.trim() || null,
+      due_date: d.echeance,
+    })
+    .eq("id", id);
   if (error) throw error;
 }
 
@@ -175,6 +213,29 @@ export async function creerNote(n: {
     coefficient: n.coefficient,
     date: new Date().toISOString().slice(0, 10),
   });
+  if (error) throw error;
+}
+
+export async function modifierNote(
+  id: string,
+  n: {
+    intitule: string;
+    matiere: string | null;
+    valeur: number;
+    bareme: number;
+    coefficient: number;
+  },
+): Promise<void> {
+  const { error } = await supabase
+    .from("grades")
+    .update({
+      title: n.intitule.trim(),
+      subject: n.matiere?.trim() || null,
+      score: n.valeur,
+      max_score: n.bareme,
+      coefficient: n.coefficient,
+    })
+    .eq("id", id);
   if (error) throw error;
 }
 

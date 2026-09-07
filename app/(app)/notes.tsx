@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Ecran from "@/components/Ecran";
 import Entete from "@/components/Entete";
 import Carte from "@/components/Carte";
@@ -11,6 +11,7 @@ import EtatVide from "@/components/EtatVide";
 import {
   creerNote,
   listerNotes,
+  modifierNote,
   moyenne,
   moyenneParMatiere,
   supprimerNote,
@@ -30,6 +31,7 @@ export default function EcranNotes() {
   const [chargement, setChargement] = useState(true);
   const [rafraichit, setRafraichit] = useState(false);
   const [formOuvert, setFormOuvert] = useState(false);
+  const [enEdition, setEnEdition] = useState<string | null>(null);
   const [intitule, setIntitule] = useState("");
   const [matiere, setMatiere] = useState("");
   const [valeur, setValeur] = useState("");
@@ -77,28 +79,57 @@ export default function EcranNotes() {
     baremeNum > 0 &&
     valeurNum > baremeNum;
 
-  async function ajouter() {
+  function fermerForm() {
+    setFormOuvert(false);
+    setEnEdition(null);
+    setIntitule("");
+    setMatiere("");
+    setValeur("");
+    setBareme("20");
+    setCoefficient("1");
+  }
+
+  function ouvrirModification(n: Note) {
+    setEnEdition(n.id);
+    setIntitule(n.intitule);
+    setMatiere(n.matiere ?? "");
+    setValeur(String(n.valeur).replace(".", ","));
+    setBareme(String(n.bareme).replace(".", ","));
+    setCoefficient(String(n.coefficient).replace(".", ","));
+    setFormOuvert(true);
+  }
+
+  async function enregistrer() {
     if (!saisieValide || enCours) return;
     setEnCours(true);
     try {
-      await creerNote({
+      const champs = {
         intitule,
         matiere: matiere || null,
         valeur: valeurNum,
         bareme: baremeNum,
         coefficient: coefNum,
-      });
-      setIntitule("");
-      setValeur("");
-      setBareme("20");
-      setCoefficient("1");
-      setFormOuvert(false);
+      };
+      if (enEdition) {
+        await modifierNote(enEdition, champs);
+      } else {
+        await creerNote(champs);
+      }
+      fermerForm();
       await charger();
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
       setEnCours(false);
     }
+  }
+
+  function menu(n: Note) {
+    Alert.alert(n.intitule, undefined, [
+      { text: "Modifier", onPress: () => ouvrirModification(n) },
+      { text: "Supprimer", style: "destructive", onPress: () => supprimer(n.id) },
+      { text: "Annuler", style: "cancel" },
+    ]);
   }
 
   async function supprimer(id: string) {
@@ -136,7 +167,10 @@ export default function EcranNotes() {
                 titre="Ajouter"
                 taille="sm"
                 icone="add"
-                onPress={() => setFormOuvert(true)}
+                onPress={() => {
+                  setEnEdition(null);
+                  setFormOuvert(true);
+                }}
               />
             ) : undefined
           }
@@ -215,13 +249,13 @@ export default function EcranNotes() {
               titre="Annuler"
               variante="discret"
               taille="sm"
-              onPress={() => setFormOuvert(false)}
+              onPress={fermerForm}
               desactive={enCours}
             />
             <Bouton
-              titre="Ajouter"
+              titre={enEdition ? "Enregistrer" : "Ajouter"}
               taille="sm"
-              onPress={ajouter}
+              onPress={enregistrer}
               enCours={enCours}
               desactive={!saisieValide}
             />
@@ -234,7 +268,16 @@ export default function EcranNotes() {
           icone="stats-chart-outline"
           titre="Aucune note"
           texte="Saisis tes notes au fur et à mesure, la moyenne se calcule toute seule, coefficients compris."
-          action={<Bouton titre="Ajouter une note" icone="add" onPress={() => setFormOuvert(true)} />}
+          action={
+            <Bouton
+              titre="Ajouter une note"
+              icone="add"
+              onPress={() => {
+                setEnEdition(null);
+                setFormOuvert(true);
+              }}
+            />
+          }
         />
       ) : (
         <>
@@ -266,7 +309,8 @@ export default function EcranNotes() {
               {notes.map((n, i) => (
                 <Pressable
                   key={n.id}
-                  onLongPress={() => supprimer(n.id)}
+                  onPress={() => ouvrirModification(n)}
+                  onLongPress={() => menu(n)}
                   style={({ pressed }) => [
                     s.ligne,
                     i < notes.length - 1 && s.trait,
@@ -297,7 +341,9 @@ export default function EcranNotes() {
             </Carte>
           </Section>
 
-          <Text style={[Typo.petit, s.astuce]}>Appui long sur une note pour la supprimer.</Text>
+          <Text style={[Typo.petit, s.astuce]}>
+            Touche une note pour la modifier. Appui long pour le menu.
+          </Text>
         </>
       )}
     </Ecran>

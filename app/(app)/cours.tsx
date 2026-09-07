@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Ecran from "@/components/Ecran";
 import Entete from "@/components/Entete";
 import Carte from "@/components/Carte";
@@ -9,9 +9,16 @@ import Puce from "@/components/Puce";
 import Bouton from "@/components/Bouton";
 import Section from "@/components/Section";
 import EtatVide from "@/components/EtatVide";
-import { creerCours, JOURS, listerCours, supprimerCours, type Cours } from "@/lib/etudes";
+import {
+  creerCours,
+  JOURS,
+  listerCours,
+  modifierCours,
+  supprimerCours,
+  type Cours,
+} from "@/lib/etudes";
 import { messageErreur } from "@/lib/api";
-import { Colors, Espacements, Polices, Typo } from "@/constants/theme";
+import { Colors, Espacements, PRESSION, Polices, Typo } from "@/constants/theme";
 
 /**
  * Mes cours, semaine type.
@@ -25,6 +32,7 @@ export default function EcranCours() {
   const [chargement, setChargement] = useState(true);
   const [rafraichit, setRafraichit] = useState(false);
   const [formOuvert, setFormOuvert] = useState(false);
+  const [enEdition, setEnEdition] = useState<string | null>(null);
   const [intitule, setIntitule] = useState("");
   const [jour, setJour] = useState(1);
   const [debut, setDebut] = useState("");
@@ -61,28 +69,58 @@ export default function EcranCours() {
   const peutValider =
     intitule.trim().length > 1 && heureValide(debut) && heureValide(fin) && !enCours;
 
-  async function ajouter() {
+  function fermerForm() {
+    setFormOuvert(false);
+    setEnEdition(null);
+    setIntitule("");
+    setDebut("");
+    setFin("");
+    setSalle("");
+    setJour(1);
+  }
+
+  /** Ouvre le meme formulaire, prerempli. Un ecran de plus n'apporterait rien. */
+  function ouvrirModification(c: Cours) {
+    setEnEdition(c.id);
+    setIntitule(c.intitule);
+    setJour(c.jour);
+    setDebut(c.debut);
+    setFin(c.fin);
+    setSalle(c.salle ?? "");
+    setFormOuvert(true);
+  }
+
+  async function enregistrer() {
     if (!peutValider) return;
     setEnCours(true);
     try {
-      await creerCours({
+      const champs = {
         intitule,
         jour,
         debut: normaliser(debut),
         fin: normaliser(fin),
         salle: salle || null,
-      });
-      setIntitule("");
-      setDebut("");
-      setFin("");
-      setSalle("");
-      setFormOuvert(false);
+      };
+      if (enEdition) {
+        await modifierCours(enEdition, champs);
+      } else {
+        await creerCours(champs);
+      }
+      fermerForm();
       await charger();
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
       setEnCours(false);
     }
+  }
+
+  function menu(c: Cours) {
+    Alert.alert(c.intitule, undefined, [
+      { text: "Modifier", onPress: () => ouvrirModification(c) },
+      { text: "Supprimer", style: "destructive", onPress: () => supprimer(c.id) },
+      { text: "Annuler", style: "cancel" },
+    ]);
   }
 
   async function supprimer(id: string) {
@@ -121,7 +159,10 @@ export default function EcranCours() {
                 titre="Ajouter"
                 taille="sm"
                 icone="add"
-                onPress={() => setFormOuvert(true)}
+                onPress={() => {
+                  setEnEdition(null);
+                  setFormOuvert(true);
+                }}
               />
             ) : undefined
           }
@@ -189,13 +230,13 @@ export default function EcranCours() {
               titre="Annuler"
               variante="discret"
               taille="sm"
-              onPress={() => setFormOuvert(false)}
+              onPress={fermerForm}
               desactive={enCours}
             />
             <Bouton
-              titre="Ajouter"
+              titre={enEdition ? "Enregistrer" : "Ajouter"}
               taille="sm"
-              onPress={ajouter}
+              onPress={enregistrer}
               enCours={enCours}
               desactive={!peutValider}
             />
@@ -208,7 +249,16 @@ export default function EcranCours() {
           icone="school-outline"
           titre="Aucun cours pour l'instant"
           texte="Ajoute tes matières et leurs créneaux. Ou colle le lien de ton agenda universitaire, et tout se remplit d'un coup."
-          action={<Bouton titre="Ajouter un cours" icone="add" onPress={() => setFormOuvert(true)} />}
+          action={
+            <Bouton
+              titre="Ajouter un cours"
+              icone="add"
+              onPress={() => {
+                setEnEdition(null);
+                setFormOuvert(true);
+              }}
+            />
+          }
         />
       ) : (
         JOURS.map((nomJour, i) => {
@@ -218,9 +268,15 @@ export default function EcranCours() {
             <Section key={nomJour} titre={nomJour}>
               <Carte>
                 {duJour.map((c, j) => (
-                  <View
+                  <Pressable
                     key={c.id}
-                    style={[s.creneau, j < duJour.length - 1 && s.trait]}
+                    onPress={() => ouvrirModification(c)}
+                    onLongPress={() => menu(c)}
+                    style={({ pressed }) => [
+                      s.creneau,
+                      j < duJour.length - 1 && s.trait,
+                      pressed && { opacity: PRESSION },
+                    ]}
                   >
                     <View style={s.heures}>
                       <Text style={s.heure}>{c.debut}</Text>
@@ -235,13 +291,13 @@ export default function EcranCours() {
                     </View>
                     <Bouton
                       titre=""
-                      libelleAccessible={"Supprimer " + c.intitule}
+                      libelleAccessible={"Options de " + c.intitule}
                       variante="discret"
                       taille="sm"
-                      icone="trash-outline"
-                      onPress={() => supprimer(c.id)}
+                      icone="ellipsis-horizontal"
+                      onPress={() => menu(c)}
                     />
-                  </View>
+                  </Pressable>
                 ))}
               </Carte>
             </Section>

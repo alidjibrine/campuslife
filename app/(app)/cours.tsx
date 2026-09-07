@@ -23,6 +23,7 @@ import { Colors, Espacements, Polices, Typo } from "@/constants/theme";
 export default function EcranCours() {
   const [cours, setCours] = useState<Cours[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [rafraichit, setRafraichit] = useState(false);
   const [formOuvert, setFormOuvert] = useState(false);
   const [intitule, setIntitule] = useState("");
   const [jour, setJour] = useState(1);
@@ -40,6 +41,7 @@ export default function EcranCours() {
       setErreur(messageErreur(e));
     } finally {
       setChargement(false);
+      setRafraichit(false);
     }
   }, []);
 
@@ -98,6 +100,11 @@ export default function EcranCours() {
       clavier
       chargement={chargement}
       erreur={erreur}
+      rafraichit={rafraichit}
+      surRafraichir={() => {
+        setRafraichit(true);
+        charger();
+      }}
       entete={
         <Entete
           retour

@@ -28,6 +28,7 @@ import { Colors, Espacements, PRESSION, Polices, Rayons, Typo } from "@/constant
 export default function EcranNotes() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [rafraichit, setRafraichit] = useState(false);
   const [formOuvert, setFormOuvert] = useState(false);
   const [intitule, setIntitule] = useState("");
   const [matiere, setMatiere] = useState("");
@@ -45,6 +46,7 @@ export default function EcranNotes() {
       setErreur(messageErreur(e));
     } finally {
       setChargement(false);
+      setRafraichit(false);
     }
   }, []);
 
@@ -118,6 +120,11 @@ export default function EcranNotes() {
       clavier
       chargement={chargement}
       erreur={erreur}
+      rafraichit={rafraichit}
+      surRafraichir={() => {
+        setRafraichit(true);
+        charger();
+      }}
       entete={
         <Entete
           retour

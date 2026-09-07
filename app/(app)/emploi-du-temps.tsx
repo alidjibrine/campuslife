@@ -37,6 +37,7 @@ export default function EmploiDuTemps() {
   const [seances, setSeances] = useState<Seance[]>([]);
   const [decalageSemaine, setDecalageSemaine] = useState(0);
   const [chargement, setChargement] = useState(true);
+  const [rafraichit, setRafraichit] = useState(false);
   const [formOuvert, setFormOuvert] = useState(false);
   const [lien, setLien] = useState("");
   const [libelle, setLibelle] = useState("");
@@ -60,6 +61,7 @@ export default function EmploiDuTemps() {
       setErreur(messageErreur(e));
     } finally {
       setChargement(false);
+      setRafraichit(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decalageSemaine]);
@@ -170,6 +172,11 @@ export default function EmploiDuTemps() {
       clavier
       chargement={chargement}
       erreur={erreur}
+      rafraichit={rafraichit}
+      surRafraichir={() => {
+        setRafraichit(true);
+        charger();
+      }}
       entete={
         <Entete
           retour

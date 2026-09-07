@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRouter, type Href } from "expo-router";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -27,6 +28,7 @@ import { Colors, Espacements, PRESSION, Rayons, Typo } from "@/constants/theme";
  * je partage. On les retrouve ensuite dans toute l'app.
  */
 export default function Login() {
+  const router = useRouter();
   const [mode, setMode] = useState<"connexion" | "inscription">("connexion");
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
@@ -151,6 +153,16 @@ export default function Login() {
                 : "Pas encore de compte ? En créer un"}
             </Text>
           </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [s.aide, pressed && { opacity: PRESSION }]}
+            onPress={() => router.push("/(auth)/mot-de-passe-oublie" as Href)}
+            disabled={enCours}
+          >
+            <Text style={[Typo.petit, s.aideTexte]}>
+              Mot de passe oublié, ou courriel de confirmation perdu ?
+            </Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -181,4 +193,6 @@ const s = StyleSheet.create({
   espace: { marginTop: Espacements.md },
   bascule: { marginTop: Espacements.lg, alignItems: "center", paddingVertical: 6 },
   basculeTexte: { color: Colors.prive.fonce },
+  aide: { marginTop: Espacements.sm, alignItems: "center", paddingVertical: 6 },
+  aideTexte: { textAlign: "center" },
 });

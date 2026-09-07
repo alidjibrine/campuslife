@@ -54,6 +54,36 @@ la migration 006, suffit a tout ouvrir.
 
 ---
 
+## 3 bis. Declarer les adresses de retour dans Supabase
+
+**Sans cette etape, le lien « mot de passe oublie » ouvre une page d'erreur au
+lieu de l'application.** C'est la seule chose qui reste a faire cote base, et
+elle ne se fait que dans le tableau de bord.
+
+Tableau de bord Supabase, projet `campuslife`, Authentication, puis URL
+Configuration. Dans **Redirect URLs**, ajouter ces deux lignes :
+
+```
+campuslife://**
+exp://**
+```
+
+La premiere sert a l'application installee, la seconde a Expo Go pendant le
+developpement. Le champ **Site URL** peut rester tel quel : sur mobile, c'est
+l'adresse passee par l'app qui compte.
+
+Deux choses a savoir sur les courriels :
+
+- Le service de messagerie fourni par defaut avec Supabase est **limite a
+  quelques envois par heure**. C'est suffisant pour dix testeurs, pas pour une
+  ouverture large. Le jour ou ca coince, il faudra brancher un vrai service
+  d'envoi dans Authentication, Emails.
+- Les modeles de courriel sont en anglais par defaut. Ils se traduisent au meme
+  endroit, onglet Templates. Ce n'est pas bloquant, mais un etudiant qui recoit
+  « Reset your password » dans une app entierement en francais le remarque.
+
+---
+
 ## 4. Le chemin gratuit : Android d'abord
 
 Un build Android en distribution interne produit un fichier `.apk` que tu

@@ -300,6 +300,71 @@ bloquant du premier build.
 
 ---
 
+### Verification de bout en bout, 7 septembre 2026
+
+Deux passes, l'une sur le contrat entre le code et la base, l'autre sur les
+operations elles-memes.
+
+**1. Le contrat.** Extraction automatique de chaque table, chaque colonne,
+chaque fonction et chaque parametre utilises par le code, puis comparaison avec
+le schema reel. Resultat : **aucune colonne manquante**, les dix fonctions
+existent avec la bonne signature et sont executables par un compte connecte, et
+les noms de colonnes renvoyes par `mes_conversations` et
+`signalements_a_traiter` correspondent exactement a ce que le code relit.
+Verification aussi qu'il n'existe qu'une seule cle etrangere entre `posts` et
+`comments`, et entre `posts` et `post_likes` : deux auraient rendu ambigus les
+compteurs du fil et fait echouer la requete.
+
+**2. Les operations.** Vingt-huit verifications enchainees dans une transaction
+annulee, avec deux comptes de test sous les vraies regles d'acces : profil,
+devoirs, cours, notes, emploi du temps importe, publication, mention j'aime,
+reponse, annuaire, abonnement, signalement, conversation, message, compteur de
+non lus, marquage lu, suppression d'un message, stockage, rattachement,
+moderation et retrait d'un contenu signale.
+
+**Resultat : 0 echec sur 28.** Le back end fait ce que le front lui demande.
+
+### Mot de passe oublie (ajoute le 7 septembre 2026)
+
+C'etait le dernier trou fonctionnel, et il etait beant : **un testeur qui
+oubliait son mot de passe etait bloque a vie**, sans le moindre recours dans
+l'app. Idem pour celui qui perdait son courriel de confirmation.
+
+- [x] Ecran « je n'arrive pas a entrer » : demande du lien de reinitialisation
+      et renvoi du courriel de confirmation, au meme endroit parce que c'est la
+      meme detresse
+- [x] Reponse identique que l'adresse existe ou non, pour ne pas reveler qui
+      est inscrit
+- [x] Reception du lien dans l'app : sur mobile la bibliotheque Supabase ne lit
+      pas l'adresse toute seule, c'est le contexte d'authentification qui
+      attrape le lien, en extrait les jetons et ouvre la session
+- [x] Garde dediee : la session ouverte par un lien de reinitialisation mene au
+      choix du nouveau mot de passe, avant meme l'onboarding
+- [x] Messages d'erreur traduits pour les trois cas frequents : lien expire,
+      trop de tentatives, mot de passe identique a l'ancien
+
+**Reste a faire, et ca ne peut se faire que dans le tableau de bord :** declarer
+les adresses de retour dans Supabase. Voir `docs/04-mise-en-service.md`.
+
+### Finitions du meme jour
+
+- [x] Tirer-pour-rafraichir sur les quatre ecrans qui n'en avaient pas :
+      cours, devoirs, notes, emploi du temps
+- [x] Migration 013 : les deux declencheurs ajoutes par les migrations 010 et
+      011 etaient exposes comme points d'entree de l'API, comme l'avaient ete
+      les autres avant la 006. Le retrait se fait desormais en boucle sur
+      toutes les fonctions de declencheur, pour que la prochaine soit couverte
+      sans qu'on y pense. Verifie ensuite que les declencheurs fonctionnent
+      toujours : creation du profil a l'inscription, rattachement par domaine,
+      rattachement d'une publication a l'ecole, et les deux garde-fous du role
+      et de l'etablissement. Six verifications, zero echec.
+
+**Analyseur de securite Supabase : aucune alerte de niveau ERROR.** Les
+avertissements restants concernent des fonctions volontairement appelables par
+un compte connecte, chacune verifiant elle-meme qui l'appelle.
+
+---
+
 ### Relecture complete du 6 septembre 2026
 
 Passe sur l'ensemble du code avant de le donner a des testeurs. Ce qui a ete

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Redirect, Stack, usePathname } from "expo-router";
+import { Redirect, Stack, usePathname, type Href } from "expo-router";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMonProfil, type Profil } from "@/lib/api";
@@ -8,15 +8,17 @@ import { Colors } from "@/constants/theme";
 /**
  * Ecrans reserves aux connectes.
  *
- * Deux gardes, dans cet ordre :
+ * Trois gardes, dans cet ordre :
  *   1. pas de session, on renvoie vers la connexion
- *   2. profil incomplet, on renvoie vers l'onboarding
+ *   2. session ouverte par un lien de reinitialisation, on renvoie vers le
+ *      choix du nouveau mot de passe, avant meme l'onboarding
+ *   3. profil incomplet, on renvoie vers l'onboarding
  *
  * Le profil est relu a chaque changement d'ecran : une fois l'onboarding
  * termine, la garde se leve toute seule sans avoir a recharger l'app.
  */
 export default function AppLayout() {
-  const { session, chargement: chargementAuth } = useAuth();
+  const { session, chargement: chargementAuth, modeRecuperation } = useAuth();
   const chemin = usePathname();
   const [profil, setProfil] = useState<Profil | null>(null);
   const [profilCharge, setProfilCharge] = useState(false);
@@ -52,10 +54,16 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
+  // Le lien de reinitialisation ouvre une session : on l'intercepte ici,
+  // sinon l'etudiant atterrit sur son QG sans avoir change son mot de passe.
+  if (modeRecuperation && chemin !== "/nouveau-mot-de-passe") {
+    return <Redirect href={"/(app)/nouveau-mot-de-passe" as Href} />;
+  }
+
   const surOnboarding = chemin === "/onboarding";
   const doitCompleter = !profil || !profil.estComplet;
 
-  if (doitCompleter && !surOnboarding) {
+  if (doitCompleter && !surOnboarding && !modeRecuperation) {
     return <Redirect href="/(app)/onboarding" />;
   }
 
@@ -68,6 +76,7 @@ export default function AppLayout() {
     >
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="nouveau-mot-de-passe" options={{ gestureEnabled: false }} />
       <Stack.Screen name="cours" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="devoirs" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="notes" options={{ animation: "slide_from_right" }} />

@@ -46,6 +46,9 @@ supprimees de la base.
   faille de l'onboarding, qui laissait choisir son ecole dans une liste.
 - `012_avatar_dans_les_conversations` : la liste des conversations renvoie la
   photo de l'interlocuteur.
+- `013_declencheurs_hors_api` : retire le droit d'execution de toutes les
+  fonctions de declencheur, en boucle plutot qu'une par une, pour que les
+  prochaines soient couvertes sans qu'on y pense.
 
 ## Etat au 6 septembre 2026
 

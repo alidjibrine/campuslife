@@ -34,6 +34,7 @@ import { Colors, Espacements, PRESSION, Rayons, Typo } from "@/constants/theme";
 export default function Devoirs() {
   const [devoirs, setDevoirs] = useState<Devoir[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [rafraichit, setRafraichit] = useState(false);
   const [formOuvert, setFormOuvert] = useState(false);
   const [titre, setTitre] = useState("");
   const [matiere, setMatiere] = useState("");
@@ -49,6 +50,7 @@ export default function Devoirs() {
       setErreur(messageErreur(e));
     } finally {
       setChargement(false);
+      setRafraichit(false);
     }
   }, []);
 
@@ -175,6 +177,11 @@ export default function Devoirs() {
       clavier
       chargement={chargement}
       erreur={erreur}
+      rafraichit={rafraichit}
+      surRafraichir={() => {
+        setRafraichit(true);
+        charger();
+      }}
       entete={
         <Entete
           retour

@@ -1,3 +1,4 @@
+import * as Linking from "expo-linking";
 import { supabase } from "@/lib/supabase";
 
 /**
@@ -147,6 +148,15 @@ export async function listerEcoles(): Promise<Ecole[]> {
   return ((data ?? []) as LigneEcole[]).map((l) => versEcole(l) as Ecole);
 }
 
+/**
+ * L'adresse vers laquelle les liens envoyes par courriel doivent ramener.
+ * En developpement c'est une adresse exp://, dans l'app installee c'est
+ * campuslife://. `createURL` s'occupe de la difference.
+ */
+function lienDeRetour(chemin: string): string {
+  return Linking.createURL(chemin);
+}
+
 export async function inscription(
   email: string,
   motDePasse: string,
@@ -154,11 +164,46 @@ export async function inscription(
   const { data, error } = await supabase.auth.signUp({
     email: email.trim().toLowerCase(),
     password: motDePasse,
+    options: { emailRedirectTo: lienDeRetour("/") },
   });
   if (error) throw error;
   // Si la confirmation par e-mail est active cote Supabase, aucune session
   // n'est ouverte tant que l'etudiant n'a pas clique sur le lien recu.
   return { sessionCreee: Boolean(data.session) };
+}
+
+/**
+ * Renvoie le courriel de confirmation. Sans ca, un etudiant qui a perdu le
+ * premier message est bloque pour toujours, sans aucun recours dans l'app.
+ */
+export async function renvoyerConfirmation(email: string): Promise<void> {
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: email.trim().toLowerCase(),
+    options: { emailRedirectTo: lienDeRetour("/") },
+  });
+  if (error) throw error;
+}
+
+/**
+ * Demande le courriel de reinitialisation du mot de passe.
+ *
+ * On ne dit jamais si l'adresse existe ou non : repondre « ce compte n'existe
+ * pas » permettrait a n'importe qui de savoir qui est inscrit. L'ecran affiche
+ * donc le meme message dans les deux cas.
+ */
+export async function demanderReinitialisation(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    email.trim().toLowerCase(),
+    { redirectTo: lienDeRetour("/nouveau-mot-de-passe") },
+  );
+  if (error) throw error;
+}
+
+/** Enregistre le nouveau mot de passe. La session de recuperation est deja ouverte. */
+export async function definirMotDePasse(motDePasse: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password: motDePasse });
+  if (error) throw error;
 }
 
 export async function connexion(email: string, motDePasse: string): Promise<void> {
@@ -188,6 +233,15 @@ export function messageErreur(erreur: unknown): string {
   }
   if (m.includes("email not confirmed")) {
     return "Ton adresse n'est pas encore confirmée. Regarde ta boîte mail.";
+  }
+  if (m.includes("for security purposes") || m.includes("rate limit") || m.includes("too many")) {
+    return "Trop de tentatives. Attends une minute avant de réessayer.";
+  }
+  if (m.includes("new password should be different")) {
+    return "Le nouveau mot de passe doit être différent de l'ancien.";
+  }
+  if (m.includes("auth session missing") || m.includes("session_not_found")) {
+    return "Ce lien a expiré. Redemande un courriel de réinitialisation.";
   }
   if (m.includes("network") || m.includes("fetch")) {
     return "Pas de réseau. Vérifie ta connexion et réessaie.";
